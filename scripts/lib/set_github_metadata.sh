@@ -4,9 +4,11 @@
 #
 # Usage: scripts/lib/set_github_metadata.sh [owner/repo]
 set -euo pipefail
+# gh repo edit takes the repository as a positional argument; without
+# one it edits the repository of the current directory's remote.
 REPO="${1:-}"
 ARGS=()
-if [[ -n "$REPO" ]]; then ARGS=(--repo "$REPO"); fi
+if [[ -n "$REPO" ]]; then ARGS=("$REPO"); fi
 DESCRIPTION="TMT proteomics differential abundance with msqrob2 mixed models, benchmarked on spike-in mixtures with known ground truth to measure ratio compression and the cost of ignoring the plex, and applied to a high fat diet study in mouse adipose tissue."
 TOPICS=(proteomics mass-spectrometry tmt isobaric-labeling tandem-mass-tags msqrob2 qfeatures bioconductor
         mixed-models differential-abundance ratio-compression reporter-ions sps-ms3 reference-channels
