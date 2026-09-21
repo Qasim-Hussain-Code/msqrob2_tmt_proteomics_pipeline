@@ -15,7 +15,7 @@ pkgs <- c(
     "QFeatures", "msqrob2", "MsCoreUtils", "lme4", "limma",
     "data.table", "dplyr", "tidyr", "ggplot2", "ggrepel", "patchwork",
     "ComplexHeatmap", "ExploreModelMatrix", "BiocFileCache", "BiocParallel",
-    "matrixStats", "jsonlite", "quarto", "rmarkdown", "knitr", "statmod"
+    "matrixStats", "jsonlite", "quarto", "rmarkdown", "knitr", "statmod", "R.utils"
 )
 
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
