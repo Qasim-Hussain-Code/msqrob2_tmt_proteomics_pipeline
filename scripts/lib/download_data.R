@@ -118,8 +118,9 @@ add_row <- function(dataset, file, src, res, url, exp_size, exp_md5, note = "") 
 
 message("enumerating Zenodo record ", ZENODO_RECORD)
 rec <- fetch_json(ZENODO_API)
+## "key" is a reserved argument of data.table(), hence "fname".
 zfiles <- rbindlist(lapply(rec$files, function(f) data.table(
-    key = f$key, size = as.numeric(f$size),
+    fname = f$key, size = as.numeric(f$size),
     md5 = sub("^md5:", "", f$checksum), url = f$links$self)))
 record_info <- data.table(
     record_id = rec$id, doi = rec$doi, concept_doi = rec$conceptdoi,
@@ -127,17 +128,17 @@ record_info <- data.table(
     updated = rec$updated, license = rec$metadata$license$id,
     title = rec$metadata$title, n_files = nrow(zfiles), total_bytes = sum(zfiles$size))
 message(sprintf("record %s revision %s, %d files, %.1f MB", rec$id, rec$revision, nrow(zfiles), sum(zfiles$size) / 1e6))
-print(zfiles[, .(key, size, md5)])
+print(zfiles[, .(fname, size, md5)])
 
 ## Files are selected by dataset prefix, not by name. One of the record's
 ## description lines spells a filename "spilein2"; the API listing is
 ## the authority and whatever it says is what gets fetched.
 for (ds in datasets) {
-    sel <- zfiles[startsWith(key, paste0(ds, "_")) & !grepl("\\.zip$", key)]
+    sel <- zfiles[startsWith(fname, paste0(ds, "_")) & !grepl("[.]zip$", fname)]
     if (!nrow(sel)) stop("no Zenodo files with prefix ", ds, "_ in record ", ZENODO_RECORD)
     for (i in seq_len(nrow(sel))) {
-        res <- cached_download(sel$key[i], sel$url[i], sel$size[i], sel$md5[i])
-        add_row(ds, sel$key[i], paste0("zenodo:", ZENODO_RECORD), res, sel$url[i], sel$size[i], sel$md5[i])
+        res <- cached_download(sel$fname[i], sel$url[i], sel$size[i], sel$md5[i])
+        add_row(ds, sel$fname[i], paste0("zenodo:", ZENODO_RECORD), res, sel$url[i], sel$size[i], sel$md5[i])
     }
 }
 

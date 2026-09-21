@@ -66,7 +66,7 @@ set_conf() {
 CONDA_BIN=""
 if [[ $SYSTEM_R -eq 0 ]]; then CONDA_BIN="$(find_conda)"; fi
 
-ENV_RSCRIPT=""
+ENV_FOUND=0
 if [[ -n "$CONDA_BIN" ]]; then
     echo "01_install: conda found at $CONDA_BIN"
     ENV_NAME="msqrob2_tmt"
@@ -83,47 +83,48 @@ if [[ -n "$CONDA_BIN" ]]; then
         PREFIX="$("$CONDA_BIN" env list | awk -v n="$ENV_NAME" '$1==n {print $NF}' | tr -d '\r')"
         # Git Bash needs a POSIX path; conda prints a Windows path there.
         if command -v cygpath >/dev/null 2>&1; then PREFIX="$(cygpath -u "$PREFIX")"; fi
-        for r in "$PREFIX/bin/Rscript" "$PREFIX/Scripts/Rscript.exe" "$PREFIX/lib/R/bin/Rscript.exe" "$PREFIX/Lib/R/bin/Rscript.exe"; do
-            if [[ -x "$r" ]]; then ENV_RSCRIPT="$r"; break; fi
-        done
-        if [[ -z "$ENV_RSCRIPT" ]]; then
-            echo "01_install: could not locate Rscript inside $PREFIX; falling back to system R" | tee -a "$LOG"
-            CONDA_BIN=""
-        else
+        if [[ -x "$PREFIX/bin/Rscript" || -x "$PREFIX/Scripts/Rscript.exe" ]]; then
+            ENV_FOUND=1
             set_conf CONDA_ENV "$ENV_NAME"
             set_conf CONDA_EXE_PATH "$CONDA_BIN"
             set_conf CONDA_PREFIX_PATH "$PREFIX"
-            for q in "$PREFIX/bin/quarto" "$PREFIX/Scripts/quarto.exe" "$PREFIX/Library/bin/quarto.exe" "$PREFIX/Library/bin/quarto.cmd"; do
-                if [[ -x "$q" ]]; then set_conf QUARTO "$q"; break; fi
+            for q in "$PREFIX/bin/quarto" "$PREFIX/Library/bin/quarto.cmd" "$PREFIX/Scripts/quarto.cmd"; do
+                if [[ -e "$q" ]]; then set_conf QUARTO "$q"; break; fi
             done
-            for s in "$PREFIX/bin/shellcheck" "$PREFIX/Scripts/shellcheck.exe" "$PREFIX/Library/bin/shellcheck.exe"; do
+            for s in "$PREFIX/bin/shellcheck" "$PREFIX/Library/bin/shellcheck.exe" "$PREFIX/Scripts/shellcheck.exe"; do
                 if [[ -x "$s" ]]; then set_conf SHELLCHECK "$s"; break; fi
             done
+        else
+            echo "01_install: could not locate Rscript inside $PREFIX; falling back to system R" | tee -a "$LOG"
         fi
     fi
 fi
 
-if [[ -n "$ENV_RSCRIPT" ]]; then
-    RSCRIPT_USE="$ENV_RSCRIPT"
-else
-    RSCRIPT_USE="${RSCRIPT:-$(command -v Rscript || true)}"
-    if [[ -z "$RSCRIPT_USE" ]]; then
+# Stages never call Rscript directly. scripts/lib/rscript.sh reads
+# project.conf and either puts the conda environment's runtime
+# directories on PATH (a conda R on Windows cannot start without them)
+# or falls through to the system Rscript recorded in RSCRIPT_SYSTEM.
+set_conf RSCRIPT_SYSTEM "${RSCRIPT:-$(command -v Rscript || true)}"
+if [[ $ENV_FOUND -eq 0 ]]; then
+    set_conf CONDA_PREFIX_PATH ""
+    if [[ -z "$(command -v Rscript || true)" ]]; then
         echo "01_install: no Rscript found and conda unavailable; install R >= 4.4 and re-run" >&2
         exit 1
     fi
-    echo "01_install: using system R at $RSCRIPT_USE"
+    echo "01_install: using system R at $(command -v Rscript)"
 fi
+RSCRIPT_USE="$ROOT/scripts/lib/rscript.sh"
 
 # Install the Bioconductor stack inside whichever R was chosen. On a
 # conda R for Windows, BiocManager fetches CRAN and Bioconductor
 # binaries built for the same UCRT toolchain; on Linux it compiles.
-echo "01_install: installing R packages with $RSCRIPT_USE" | tee -a "$LOG"
+echo "01_install: installing R packages with $("$RSCRIPT_USE" --version 2>&1 | head -1)" | tee -a "$LOG"
 if ! "$RSCRIPT_USE" "$ROOT/scripts/lib/install_packages.R" \
         "$ROOT/config/r_packages.tsv" "$ROOT/logs/sessionInfo_install.txt" 2>&1 | tee -a "$LOG"; then
-    if [[ -n "$ENV_RSCRIPT" ]]; then
+    if [[ $ENV_FOUND -eq 1 ]]; then
         echo "01_install: package installation failed in the conda R; retrying with system R" | tee -a "$LOG"
-        RSCRIPT_USE="$(command -v Rscript || true)"
         set_conf CONDA_ENV ""
+        set_conf CONDA_PREFIX_PATH ""
         "$RSCRIPT_USE" "$ROOT/scripts/lib/install_packages.R" \
             "$ROOT/config/r_packages.tsv" "$ROOT/logs/sessionInfo_install.txt" 2>&1 | tee -a "$LOG"
     else
