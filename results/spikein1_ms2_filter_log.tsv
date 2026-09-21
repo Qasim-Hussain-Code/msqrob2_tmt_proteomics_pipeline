@@ -1,0 +1,13 @@
+step	psms_before	psms_after	removed	criterion	why	dataset
+duplicated reporter rows (two search nodes)	399295	384146	15149	identical reporter intensity vector within a run	two identifications of one scan; both dropped rather than double counting the scan	spikein1_ms2
+ambiguous UPS status	384146	383639	507	accession says ups xor Sigma UPS node marked the PSM	no ground truth for these PSMs, so they cannot be scored	spikein1_ms2
+failed protein inference	383639	383624	15	empty Protein.Accessions	nothing to summarise into	spikein1_ms2
+shared peptides (protein groups)	383624	351810	31814	';' in Protein.Accessions	a peptide shared by several proteins cannot be attributed; for the spike-in a group mixing ups and HeLa has no single truth	spikein1_ms2
+PSMs rejected by PD consensus	351810	351810	0	PSM.Ambiguity == Rejected	PD's own consensus step rejected the match; identification quality, not abundance	spikein1_ms2
+lower-ranked matches to a spectrum	351810	351588	222	Rank == 1 and Search.Engine.Rank == 1	a second-ranked peptide for the same scan shares that scan's reporter ions	spikein1_ms2
+decoys	351588	351588	0	Confidence classes present: High=351588	export is post-Percolator at q < 0.01; no decoy rows are present to remove	spikein1_ms2
+contaminants	351588	351588	0	no contaminant flag in the export	the searches used SwissProt (plus Sigma UPS) without a contaminant database; nothing to remove	spikein1_ms2
+ions mapped to different proteins across runs	351588	351588	0	nProtsMapped == 1	one ion, one protein, in every run	spikein1_ms2
+proteins seen in a single run	351588	351026	562	553 proteins identified in 1 of 15 runs	no replicate information at all for these proteins	spikein1_ms2
+repeat spectra of the same ion in a run	351026	333700	17326	highest summed reporter intensity per ion per run	one observation of each ion per run; identification-side choice	spikein1_ms2
+PSMs with too many missing channels	333700	333263	437	more than 50% of channels NA	completeness of the measurement, not its value; threshold follows the vignette and is arbitrary	spikein1_ms2

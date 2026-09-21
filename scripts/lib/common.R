@@ -173,7 +173,7 @@ manifest_path <- function(conf, name) {
 
 write_tsv <- function(x, path) {
     dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
-    fwrite(as.data.table(x), path, sep = "\t", na = "NA")
+    fwrite(as.data.table(x), path, sep = "\t", na = "NA", quote = FALSE)
     message("wrote ", path)
 }
 
@@ -203,4 +203,19 @@ spikein_expected_contrasts <- function() {
         ratio = cond$fmol[cmb[1, ]] / cond$fmol[cmb[2, ]],
         expected_log2fc = log2(cond$fmol[cmb[1, ]] / cond$fmol[cmb[2, ]])
     )
+}
+
+## Memory checkpoints. Each call appends heap and peak RSS to
+## logs/<stage>.memory.tsv so that the step responsible for a stage's
+## peak is identifiable after the fact.
+mem_checkpoint <- function(timer, label) {
+    g <- gc(full = TRUE)
+    heap <- sum(g[, 2])
+    rss <- peak_rss_mb()
+    f <- file.path(timer$conf$PROJECT_ROOT, "logs", paste0(timer$stage, ".memory.tsv"))
+    row <- data.frame(stage = timer$stage, checkpoint = label, heap_mb = round(heap),
+                      peak_rss_mb = round(rss), elapsed_s = round(as.numeric(difftime(Sys.time(), timer$t0, units = "secs")), 1))
+    write.table(row, f, sep = "\t", quote = FALSE, row.names = FALSE, col.names = !file.exists(f), append = file.exists(f))
+    message(sprintf("    [mem] %-32s heap %5.0f MB  peak RSS %5.0f MB", label, heap, rss))
+    invisible(row)
 }

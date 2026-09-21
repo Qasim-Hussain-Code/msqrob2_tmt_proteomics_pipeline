@@ -33,38 +33,44 @@ suppressPackageStartupMessages({
     library("SummarizedExperiment")
 })
 
-## Subtract the per-feature mean of the reference channels within each
-## run assay. Operates on log2 data, so subtraction is a ratio. Features
-## with no observed reference value in a run become NA for that run:
-## a ratio to nothing is not a value, and silently keeping the raw
-## intensity would mix two scales in one column.
-ratio_to_reference <- function(qf, sets, ref_label = "Norm", cond_col = "Condition") {
+## Subtract, feature by feature and run by run, the mean of the run's
+## reference channels. Operates on log2 data, so subtraction is a ratio.
+## The sets may be joined assays holding many runs; run_col in the
+## colData says which columns belong together. A feature with no
+## observed reference value in a run becomes NA for that run: a ratio
+## to nothing is not a value, and keeping the raw intensity would mix
+## two scales in one column.
+ratio_to_reference <- function(qf, sets, ref_label = "Norm", cond_col = "Condition", run_col = "Run") {
     for (i in sets) {
         se <- qf[[i]]
         cd <- colData(qf)[colnames(se), , drop = FALSE]
-        is_ref <- cd[[cond_col]] == ref_label
-        if (!any(is_ref)) stop("set ", i, " has no reference channel labelled ", ref_label)
         m <- assay(se)
-        ref_mean <- rowMeans(m[, is_ref, drop = FALSE], na.rm = TRUE)
-        ref_mean[is.nan(ref_mean)] <- NA
-        assay(se) <- m - ref_mean
+        for (r in unique(cd[[run_col]])) {
+            in_run <- cd[[run_col]] == r
+            is_ref <- in_run & cd[[cond_col]] == ref_label
+            if (!any(is_ref)) stop("run ", r, " in set ", i, " has no reference channel labelled ", ref_label)
+            ref_mean <- rowMeans(m[, is_ref, drop = FALSE], na.rm = TRUE)
+            ref_mean[is.nan(ref_mean)] <- NA
+            m[, in_run] <- m[, in_run, drop = FALSE] - ref_mean
+        }
+        assay(se) <- m
         qf <- replaceAssay(qf, se, i)
     }
     qf
 }
 
 ## Apply a treatment to a QFeatures object. `sets` are the assays on
-## which the ratio is computed (the run-level assays the models will
-## use); dropping is applied object-wide through the colData.
+## which the ratio is computed (the ones the models will use); dropping
+## is applied object-wide through the colData.
 apply_reference_treatment <- function(qf, mode = c("drop", "keep", "ratio"), sets,
-                                      ref_label = "Norm", cond_col = "Condition") {
+                                      ref_label = "Norm", cond_col = "Condition", run_col = "Run") {
     mode <- match.arg(mode)
     n_ref <- sum(colData(qf)[[cond_col]] == ref_label)
     if (mode == "keep") {
         return(list(qf = qf, note = sprintf("%d reference channels kept as Condition level '%s'", n_ref, ref_label)))
     }
     if (mode == "ratio") {
-        qf <- ratio_to_reference(qf, sets, ref_label, cond_col)
+        qf <- ratio_to_reference(qf, sets, ref_label, cond_col, run_col)
     }
     qf <- subsetByColData(qf, colData(qf)[[cond_col]] != ref_label)
     list(qf = qf,

@@ -1,0 +1,13 @@
+step	psms_before	psms_after	removed	criterion	why	dataset
+duplicated reporter rows (two search nodes)	317943	306325	11618	identical reporter intensity vector within a run	two identifications of one scan; both dropped rather than double counting the scan	spikein1
+ambiguous UPS status	306325	305960	365	accession says ups xor Sigma UPS node marked the PSM	no ground truth for these PSMs, so they cannot be scored	spikein1
+failed protein inference	305960	305953	7	empty Protein.Accessions	nothing to summarise into	spikein1
+shared peptides (protein groups)	305953	280280	25673	';' in Protein.Accessions	a peptide shared by several proteins cannot be attributed; for the spike-in a group mixing ups and HeLa has no single truth	spikein1
+PSMs rejected by PD consensus	280280	280280	0	PSM.Ambiguity == Rejected	PD's own consensus step rejected the match; identification quality, not abundance	spikein1
+lower-ranked matches to a spectrum	280280	279722	558	Rank == 1 and Search.Engine.Rank == 1	a second-ranked peptide for the same scan shares that scan's reporter ions	spikein1
+decoys	279722	279722	0	Confidence classes present: High=279722	export is post-Percolator at q < 0.01; no decoy rows are present to remove	spikein1
+contaminants	279722	279722	0	no contaminant flag in the export	the searches used SwissProt (plus Sigma UPS) without a contaminant database; nothing to remove	spikein1
+ions mapped to different proteins across runs	279722	279722	0	nProtsMapped == 1	one ion, one protein, in every run	spikein1
+proteins seen in a single run	279722	279260	462	454 proteins identified in 1 of 15 runs	no replicate information at all for these proteins	spikein1
+repeat spectra of the same ion in a run	279260	270345	8915	highest summed reporter intensity per ion per run	one observation of each ion per run; identification-side choice	spikein1
+PSMs with too many missing channels	270345	266847	3498	more than 50% of channels NA	completeness of the measurement, not its value; threshold follows the vignette and is arbitrary	spikein1

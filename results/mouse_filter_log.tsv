@@ -1,0 +1,10 @@
+step	psms_before	psms_after	removed	criterion	why	dataset
+failed protein inference	111744	111735	9	empty Protein.Accessions	nothing to summarise into	mouse
+shared peptides (protein groups)	111735	104548	7187	';' in Protein.Accessions	a peptide shared by several proteins cannot be attributed; for the spike-in a group mixing ups and HeLa has no single truth	mouse
+PSMs rejected by PD consensus	104548	104480	68	PSM.Ambiguity == Rejected	PD's own consensus step rejected the match; identification quality, not abundance	mouse
+lower-ranked matches to a spectrum	104480	103866	614	Rank == 1 and Search.Engine.Rank == 1	a second-ranked peptide for the same scan shares that scan's reporter ions	mouse
+decoys	103866	103866	0	Confidence classes present: High=103866	export is post-Percolator at q < 0.01; no decoy rows are present to remove	mouse
+contaminants	103866	103866	0	no contaminant flag in the export	the searches used SwissProt (plus Sigma UPS) without a contaminant database; nothing to remove	mouse
+ions mapped to different proteins across runs	103866	103866	0	nProtsMapped == 1	one ion, one protein, in every run	mouse
+repeat spectra of the same ion in a run	103866	88502	15364	highest summed reporter intensity per ion per run	one observation of each ion per run; identification-side choice	mouse
+PSMs with too many missing channels	88502	75997	12505	more than 70% of channels NA	completeness of the measurement, not its value; threshold follows the vignette and is arbitrary	mouse

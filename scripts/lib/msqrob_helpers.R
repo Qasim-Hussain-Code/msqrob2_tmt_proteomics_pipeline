@@ -1,0 +1,216 @@
+## Model fitting, testing and diagnostics shared by 05 and 07.
+##
+## Everything here wraps msqrob2 so that a workflow variant is a row in a
+## table (level, reference treatment, random effect structure, robust,
+## ridge) and not a separate script. The functions return plain
+## data.tables of per-protein, per-contrast results with the fit type
+## attached, because the benchmark needs to count fit errors and
+## singular fits as carefully as it counts significant proteins.
+
+suppressPackageStartupMessages({
+    library("data.table")
+    library("QFeatures")
+    library("msqrob2")
+    library("lme4")
+    library("limma")
+})
+
+## ---- Contrast handling ---------------------------------------------------
+
+## Hypotheses are written once with plain parameter names. Ridge
+## regression in msqrob2 prefixes every fixed effect with "ridge", so
+## the same hypotheses need rewriting when ridge is on. Longest names
+## first, whole tokens only, so that DurationLong inside
+## DietHF:DurationLong is left alone.
+ridge_names <- function(hypotheses, params) {
+    params <- params[order(-nchar(params))]
+    for (p in params) {
+        pat <- paste0("(?<![A-Za-z0-9_.:])", gsub("([.:()])", "\\\\\\1", p), "(?![A-Za-z0-9_.:])")
+        hypotheses <- gsub(pat, paste0("ridge", p), hypotheses, perl = TRUE)
+    }
+    hypotheses
+}
+
+build_contrasts <- function(hypotheses, params, ridge = FALSE) {
+    if (ridge) {
+        hypotheses <- ridge_names(hypotheses, params)
+        params <- paste0("ridge", params)
+    }
+    makeContrast(hypotheses, parameterNames = params)
+}
+
+## ---- Result extraction -----------------------------------------------------
+
+## msqrob2 stores a StatModel per protein; its @type is "lm", "rlm",
+## "lmer" or "fitError". The hypothesis test writes one DataFrame per
+## contrast into the rowData; both are gathered into one long table.
+collect_results <- function(se, L, model_col = "msqrobModels", contrast_labels = NULL) {
+    rd <- rowData(se)
+    models <- rd[[model_col]]
+    types <- vapply(models, function(m) m@type, character(1))
+    dfs <- vapply(models, function(m) if (m@type == "fitError") NA_real_ else getDF(m), numeric(1))
+    df_post <- vapply(models, function(m) if (m@type == "fitError") NA_real_ else m@dfPosterior, numeric(1))
+    out <- rbindlist(lapply(seq_len(ncol(L)), function(k) {
+        cn <- colnames(L)[k]
+        res <- rd[[cn]]
+        data.table(protein = rownames(rd),
+                   contrast = if (is.null(contrast_labels)) cn else contrast_labels[k],
+                   logFC = res$logFC, se = res$se, df = res$df, t = res$t,
+                   pval = res$pval, adjPval = res$adjPval,
+                   fit_type = types, df_residual = dfs, df_posterior = df_post)
+    }))
+    out
+}
+
+## ---- Fitting -------------------------------------------------------------
+
+## Protein-level model on a summarised assay. Returns results and the
+## wall clock of the fit alone.
+fit_protein_level <- function(qf, i, formula, hypotheses, params, robust = TRUE, ridge = FALSE,
+                              contrast_labels = NULL) {
+    L <- build_contrasts(hypotheses, params, ridge)
+    t0 <- Sys.time()
+    qf <- msqrob(qf, i = i, formula = formula, robust = robust, ridge = ridge,
+                 modelColumnName = "msqrobModels", overwrite = TRUE)
+    fit_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    qf <- hypothesisTest(qf, i = i, contrast = L, modelColumn = "msqrobModels", overwrite = TRUE)
+    res <- collect_results(qf[[i]], L, "msqrobModels", contrast_labels)
+    list(results = res, fit_seconds = fit_s, n_proteins = nrow(qf[[i]]))
+}
+
+## PSM-level model: msqrobAggregate fits one mixed model per protein on
+## all its ions at once and creates a summarised assay as a by-product.
+fit_psm_level <- function(qf, i, formula, fcol, hypotheses, params, robust = TRUE, ridge = FALSE,
+                          contrast_labels = NULL, name = "proteins_msqrob") {
+    L <- build_contrasts(hypotheses, params, ridge)
+    t0 <- Sys.time()
+    qf <- msqrobAggregate(qf, i = i, fcol = fcol, formula = formula, robust = robust, ridge = ridge,
+                          name = name, modelColumnName = "msqrobModels",
+                          aggregateFun = MsCoreUtils::robustSummary)
+    fit_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    qf <- hypothesisTest(qf, i = name, contrast = L, modelColumn = "msqrobModels", overwrite = TRUE)
+    res <- collect_results(qf[[name]], L, "msqrobModels", contrast_labels)
+    list(results = res, fit_seconds = fit_s, n_proteins = nrow(qf[[name]]))
+}
+
+## ---- Diagnostics: singular fits and variance components ------------------
+##
+## msqrob2 keeps only the coefficients and their covariance, not the
+## lme4 object, so whether a fit was singular has to come from a second
+## pass with lme4 itself. This pass fits the same formula (without
+## robust weights or ridge) protein by protein and records the variance
+## component of every random effect, the residual variance, and lme4's
+## singularity and convergence messages. A singular fit is one where at
+## least one variance component was estimated at exactly zero: the
+## data for that protein carry no evidence of, say, a mixture effect
+## beyond what the residuals already explain. With three mixtures that
+## is expected to be common and is reported, not hidden.
+lmer_diagnostics <- function(qf, i, formula, psm_level = FALSE, fcol = "Protein.Accessions",
+                             max_proteins = Inf, seed = 20260921) {
+    se <- getWithColData(qf, i)
+    cd <- as.data.frame(colData(se))
+    vars <- all.vars(formula)
+    y <- assay(se)
+    groups <- if (psm_level) rowData(se)[[fcol]] else rownames(se)
+    prots <- unique(groups)
+    if (is.finite(max_proteins) && length(prots) > max_proteins) {
+        set.seed(seed); prots <- sample(prots, max_proteins)
+    }
+    rowvars <- intersect(vars, colnames(rowData(se)))
+    colvars <- intersect(vars, colnames(cd))
+    fml <- update.formula(formula, y ~ .)
+    re_names <- vapply(findbars(formula), function(b) deparse(b[[3]]), character(1))
+    out <- vector("list", length(prots))
+    for (k in seq_along(prots)) {
+        p <- prots[k]
+        rows <- which(groups == p)
+        ymat <- y[rows, , drop = FALSE]
+        d <- data.frame(y = as.vector(ymat),
+                        cd[rep(seq_len(ncol(ymat)), each = nrow(ymat)), colvars, drop = FALSE],
+                        stringsAsFactors = FALSE)
+        for (rv in rowvars) d[[rv]] <- rep(rowData(se)[rows, rv], times = ncol(ymat))
+        d <- d[!is.na(d$y), , drop = FALSE]
+        msgs <- character()
+        fit <- tryCatch(withCallingHandlers(
+            lmer(fml, data = d, control = lmerControl(calc.derivs = FALSE)),
+            warning = function(w) { msgs <<- c(msgs, conditionMessage(w)); invokeRestart("muffleWarning") },
+            message = function(m) { msgs <<- c(msgs, conditionMessage(m)); invokeRestart("muffleMessage") }),
+            error = function(e) { msgs <<- c(msgs, conditionMessage(e)); NULL })
+        if (is.null(fit)) {
+            out[[k]] <- data.table(protein = p, n_obs = nrow(d), status = "error", singular = NA,
+                                   sigma2 = NA_real_, messages = paste(unique(msgs), collapse = " | "))
+            next
+        }
+        vc <- as.data.frame(VarCorr(fit))
+        vc <- vc[is.na(vc$var2), ]
+        comps <- setNames(vc$vcov, ifelse(vc$grp == "Residual", "sigma2", paste0("var_", vc$grp)))
+        row <- data.table(protein = p, n_obs = nrow(d),
+                          status = if (any(grepl("converge", msgs))) "convergence_warning" else "ok",
+                          singular = isSingular(fit),
+                          messages = paste(unique(msgs), collapse = " | "))
+        for (nm in names(comps)) row[[nm]] <- comps[[nm]]
+        out[[k]] <- row
+    }
+    res <- rbindlist(out, fill = TRUE)
+    setcolorder(res, c("protein", "n_obs", "status", "singular"))
+    res
+}
+
+## ---- limma reference arm -------------------------------------------------
+##
+## limma with duplicateCorrelation is the transcriptomics reader's
+## calibration point: a fixed-effects design plus one consensus
+## intra-block correlation shared by every protein, with the block set
+## to the mixture. It cannot carry a second level (run within mixture),
+## which is the point of including it.
+fit_limma_dupcor <- function(mat, cd, design_formula, block, hypotheses, params, contrast_labels = NULL) {
+    design <- model.matrix(design_formula, data = cd)
+    colnames(design) <- sub("^Condition", "Condition", colnames(design))
+    L <- makeContrast(hypotheses, parameterNames = params)
+    L <- L[colnames(design), , drop = FALSE]
+    t0 <- Sys.time()
+    dc <- duplicateCorrelation(mat, design, block = cd[[block]])
+    fit <- lmFit(mat, design, block = cd[[block]], correlation = dc$consensus)
+    fit2 <- eBayes(contrasts.fit(fit, L))
+    fit_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    res <- rbindlist(lapply(seq_len(ncol(L)), function(k) {
+        tt <- topTable(fit2, coef = k, number = Inf, sort.by = "none", adjust.method = "BH")
+        data.table(protein = rownames(tt),
+                   contrast = if (is.null(contrast_labels)) colnames(L)[k] else contrast_labels[k],
+                   logFC = tt$logFC, se = tt$logFC / tt$t, df = fit2$df.total[1], t = tt$t,
+                   pval = tt$P.Value, adjPval = tt$adj.P.Val, fit_type = "limma_dupcor",
+                   df_residual = fit2$df.residual[1], df_posterior = fit2$df.total[1])
+    }))
+    list(results = res, fit_seconds = fit_s, n_proteins = nrow(mat), consensus_correlation = dc$consensus)
+}
+
+## ---- Benchmark metrics -----------------------------------------------------
+
+## Realised false discovery proportion, sensitivity and fold change
+## bias per contrast, against the design's known truth. A UPS1 protein
+## is differential in every contrast; a HeLa protein never is.
+benchmark_metrics <- function(res, expected, alpha = 0.05) {
+    res <- copy(res)
+    res[, is_ups := grepl("ups", protein)]
+    res <- merge(res, expected[, .(contrast, expected_log2fc)], by = "contrast", all.x = TRUE)
+    res[, .(
+        n_tested = sum(!is.na(pval)),
+        n_ups_tested = sum(!is.na(pval) & is_ups),
+        n_hela_tested = sum(!is.na(pval) & !is_ups),
+        n_fit_error = sum(fit_type == "fitError"),
+        n_significant = sum(adjPval < alpha, na.rm = TRUE),
+        tp = sum(adjPval < alpha & is_ups, na.rm = TRUE),
+        fp = sum(adjPval < alpha & !is_ups, na.rm = TRUE),
+        fdp = {
+            s <- sum(adjPval < alpha, na.rm = TRUE)
+            if (s == 0) NA_real_ else sum(adjPval < alpha & !is_ups, na.rm = TRUE) / s
+        },
+        sensitivity = sum(adjPval < alpha & is_ups, na.rm = TRUE) / sum(!is.na(pval) & is_ups),
+        ups_median_log2fc = median(logFC[is_ups], na.rm = TRUE),
+        ups_iqr_log2fc = IQR(logFC[is_ups], na.rm = TRUE),
+        hela_median_log2fc = median(logFC[!is_ups], na.rm = TRUE),
+        expected_log2fc = expected_log2fc[1],
+        bias = median(logFC[is_ups], na.rm = TRUE) - expected_log2fc[1],
+        alpha = alpha
+    ), by = contrast]
+}

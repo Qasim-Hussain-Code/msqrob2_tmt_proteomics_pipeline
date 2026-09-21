@@ -1,0 +1,7 @@
+contrast	hypothesis	fmol_high	fmol_low	description
+1 - 0.667	Condition1 - Condition0.667 = 0	500	333	500 fmol against 333 fmol UPS1
+1 - 0.5	Condition1 - Condition0.5 = 0	500	250	500 fmol against 250 fmol UPS1
+1 - 0.125	Condition1 - Condition0.125 = 0	500	62.5	500 fmol against 62.5 fmol UPS1
+0.667 - 0.5	Condition0.667 - Condition0.5 = 0	333	250	333 fmol against 250 fmol UPS1
+0.667 - 0.125	Condition0.667 - Condition0.125 = 0	333	62.5	333 fmol against 62.5 fmol UPS1
+0.5 - 0.125	Condition0.5 - Condition0.125 = 0	250	62.5	250 fmol against 62.5 fmol UPS1

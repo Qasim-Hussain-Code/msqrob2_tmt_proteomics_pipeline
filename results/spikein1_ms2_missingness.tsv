@@ -1,0 +1,16 @@
+run	n_psms	channel_values_zero	channel_values_na	psms_all_zero	psms_any_zero	n_psms_after_filters	channel_values_na_after	frac_values_na_after	dataset
+Mixture1_01	23385	0	732	0	257	22246	372	0.0017	spikein1_ms2
+Mixture1_02	23797	0	789	0	266	22547	408	0.0018	spikein1_ms2
+Mixture1_03	23589	0	507	0	158	22338	213	0.001	spikein1_ms2
+Mixture2_01	23213	0	913	0	280	22054	454	0.0021	spikein1_ms2
+Mixture2_02	22481	0	231	1	79	21490	107	5e-04	spikein1_ms2
+Mixture2_03	23531	0	635	0	195	22345	276	0.0012	spikein1_ms2
+Mixture3_01	23636	0	738	0	250	22472	368	0.0016	spikein1_ms2
+Mixture3_02	23805	0	554	0	192	22649	309	0.0014	spikein1_ms2
+Mixture3_03	23681	0	698	0	238	22439	340	0.0015	spikein1_ms2
+Mixture4_01	23393	0	527	0	174	22219	264	0.0012	spikein1_ms2
+Mixture4_02	23059	0	624	0	192	21854	259	0.0012	spikein1_ms2
+Mixture4_03	23292	0	775	0	237	22056	322	0.0015	spikein1_ms2
+Mixture5_01	23218	0	681	0	226	21955	348	0.0016	spikein1_ms2
+Mixture5_02	23599	0	549	0	191	22417	291	0.0013	spikein1_ms2
+Mixture5_03	23347	0	500	1	171	22182	278	0.0013	spikein1_ms2

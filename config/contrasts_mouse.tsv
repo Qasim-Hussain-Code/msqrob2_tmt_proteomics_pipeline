@@ -1,0 +1,5 @@
+contrast	hypothesis	description
+HF_vs_LF_8wk	DietHF = 0	high fat against low fat after 8 weeks (Short is the reference duration)
+HF_vs_LF_18wk	DietHF + DietHF:DurationLong = 0	high fat against low fat after 18 weeks
+HF_vs_LF_average	DietHF + 0.5*DietHF:DurationLong = 0	diet effect averaged over the two durations
+interaction	DietHF:DurationLong = 0	change in the diet effect between 18 and 8 weeks
