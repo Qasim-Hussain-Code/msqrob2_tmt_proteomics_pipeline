@@ -88,8 +88,11 @@ if [[ -n "$CONDA_BIN" ]]; then
             set_conf CONDA_ENV "$ENV_NAME"
             set_conf CONDA_EXE_PATH "$CONDA_BIN"
             set_conf CONDA_PREFIX_PATH "$PREFIX"
+            # Keep the conda quarto only if it starts; the conda-forge
+            # launcher on Windows was broken when this was written, and
+            # 00_configure.sh may already have found a working one.
             for q in "$PREFIX/bin/quarto" "$PREFIX/Library/bin/quarto.cmd" "$PREFIX/Scripts/quarto.cmd"; do
-                if [[ -e "$q" ]]; then set_conf QUARTO "$q"; break; fi
+                if [[ -e "$q" ]] && "$q" --version >/dev/null 2>&1; then set_conf QUARTO "$q"; break; fi
             done
             for s in "$PREFIX/bin/shellcheck" "$PREFIX/Library/bin/shellcheck.exe" "$PREFIX/Scripts/shellcheck.exe"; do
                 if [[ -x "$s" ]]; then set_conf SHELLCHECK "$s"; break; fi
