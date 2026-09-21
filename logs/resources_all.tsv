@@ -6,5 +6,5 @@ stage	elapsed_s	peak_rss_mb	note
 05_benchmark_workflows	9175.3	4570	acquisitions=ms3,ms2; 27 variants
 06_compression	9.8	1301	slopes: SPS-MS3=0.536, MS2=0.272
 07_mouse_inference	1063.4	2229	reference=drop; psm_level=TRUE
-08_figures	5.3	1144	
-09_report	13	NA	quarto 1.9.36
+08_figures	5.4	1136	
+09_report	6	NA	quarto 1.9.36

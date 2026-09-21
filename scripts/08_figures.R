@@ -28,6 +28,7 @@ opt <- parse_args()
 STAGE <- "08_figures"
 if (stage_already_done(STAGE, conf, force = opt$force)) quit(save = "no")
 timer <- stage_begin(STAGE, conf)
+set.seed(20260921)   # the interaction figure jitters points
 
 res_dir <- file.path(root, "results")
 fig_dir <- file.path(root, "figures")

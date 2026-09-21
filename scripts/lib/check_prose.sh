@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 # Tracked text files only: data/ and results/qfeatures are never prose.
-mapfile -t FILES < <(git ls-files | grep -vE '\.(png|gz|rds|pdf|ico)$')
+mapfile -t FILES < <(git ls-files | grep -vE '\.(png|gz|rds|pdf|ico|html)$')
 
 status=0
 echo "== em dashes (U+2014) =="
