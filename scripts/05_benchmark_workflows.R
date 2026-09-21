@@ -300,8 +300,15 @@ for (a in acquisitions) for (dsg in names(designs)) {
 
 ## ---- Write --------------------------------------------------------------
 
+## Six significant digits keep the per-protein file readable and small;
+## every downstream table is computed from it at that precision.
+round_results <- function(r) {
+    for (col in c("logFC", "se", "df", "t", "pval", "adjPval", "df_residual", "df_posterior")) if (col %in% names(r)) set(r, j = col, value = signif(r[[col]], 6))
+    r
+}
 if (postprocess_only) {
-    results <- fread(file.path(res_dir, "spikein1_benchmark_results.tsv.gz"))
+    results <- round_results(fread(file.path(res_dir, "spikein1_benchmark_results.tsv.gz")))
+    fwrite(results, file.path(res_dir, "spikein1_benchmark_results.tsv.gz"), sep = "	", compress = "gzip")
     vlog <- fread(file.path(res_dir, "spikein1_benchmark_variants.tsv"))
     diag <- rbindlist(lapply(list.files(ckpt_dir, pattern = "^diag_.*[.]rds$", full.names = TRUE), readRDS), fill = TRUE)
     diag[, messages := gsub("[[:space:]]+", " ", trimws(messages))]
@@ -314,7 +321,7 @@ if (postprocess_only) {
     }))
     message("postprocess-only: reloaded ", nrow(results), " result rows")
 } else {
-    results <- rbindlist(all_results)
+    results <- round_results(rbindlist(all_results))
     metrics <- rbindlist(all_metrics)
     vlog <- rbindlist(variant_log)
     diag <- rbindlist(diag_out, fill = TRUE)

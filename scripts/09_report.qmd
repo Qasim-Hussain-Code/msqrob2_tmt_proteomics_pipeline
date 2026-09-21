@@ -134,5 +134,6 @@ kable(fread(file.path(root, "logs", "resources_all.tsv")), caption = "Elapsed ti
 
 ```{r session}
 kable(fread(file.path(root, "config", "r_packages.tsv"))[, .(package, version)], caption = "Packages recorded at install time")
+writeLines(capture.output(sessionInfo()), file.path(root, "results", "sessionInfo_report.txt"))
 sessionInfo()
 ```

@@ -192,6 +192,7 @@ if (run_psm) {
 }
 
 results <- rbindlist(all_res)
+for (col in c("logFC", "se", "df", "t", "pval", "adjPval", "df_residual", "df_posterior")) set(results, j = col, value = signif(results[[col]], 6))
 mlog <- rbindlist(model_log)
 mlog[, reference := reference]
 fwrite(results, file.path(res_dir, "mouse_results.tsv.gz"), sep = "\t", compress = "gzip")

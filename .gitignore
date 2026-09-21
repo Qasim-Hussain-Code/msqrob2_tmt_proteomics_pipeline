@@ -28,6 +28,7 @@ renv/local/
 # Rendered report and intermediate build files. The rendered HTML is
 # large and reproducible; only the source .qmd ships.
 results/*.html
+!results/report.html
 results/*_files/
 scripts/*_files/
 scripts/*.html

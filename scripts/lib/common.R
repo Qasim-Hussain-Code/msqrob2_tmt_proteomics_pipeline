@@ -173,9 +173,12 @@ manifest_path <- function(conf, name) {
 
 write_tsv <- function(x, path) {
     dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
-    ## quote = "auto" quotes only fields that contain a tab, a newline
-    ## or a quote; plain values stay unquoted.
-    fwrite(as.data.table(x), path, sep = "\t", na = "NA", quote = "auto")
+    ## Unquoted output, so that the tables read plainly; any tab or
+    ## newline inside a text field (lme4 messages end with one) is
+    ## replaced by a space first, or it would break the row.
+    x <- as.data.table(x)
+    for (col in names(x)) if (is.character(x[[col]])) set(x, j = col, value = gsub("[\t\r\n]+", " ", x[[col]]))
+    fwrite(x, path, sep = "\t", na = "NA", quote = FALSE)
     message("wrote ", path)
 }
 
