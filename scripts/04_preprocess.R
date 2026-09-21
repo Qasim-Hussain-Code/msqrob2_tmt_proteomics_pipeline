@@ -505,10 +505,15 @@ preprocess_one <- function(dataset) {
         cdm_all <- as.data.table(as.data.frame(colData(qfm)), keep.rownames = "sample")
         mds_figure(assay(qfm[["proteins"]]), cdm_all, "mouse", facet = FALSE, label = "mouse, mixture-scope summaries")
         saveRDS(qfm[, , "proteins"], file.path(qf_dir, "mouse_mixture_preprocessed.rds"))
+        n_psm_run <- sum(vapply(runs, function(r) nrow(qf[[r]]), integer(1)))
+        n_psm_mix <- sum(vapply(mixes, function(mx) nrow(qfm[[paste0(mx, "_norm")]]), integer(1)))
         write_tsv(data.table(scope = c("fraction_run", "mixture"),
                              n_proteins = c(nrow(qf[["proteins"]]), nrow(qfm[["proteins"]])),
                              n_columns = c(ncol(qf[["proteins"]]), ncol(qfm[["proteins"]])),
-                             psms_used = c(nrow(qf[["ions_norm"]]), sum(vapply(mixes, function(mx) nrow(qfm[[paste0(mx, "_norm")]]), integer(1))))),
+                             psms_summarised = c(n_psm_run, n_psm_mix),
+                             distinct_ions = c(nrow(qf[["ions_norm"]]), length(unique(unlist(lapply(mixes, function(mx) rowData(qfm[[paste0(mx, "_norm")]])$ionID))))),
+                             note = c("one PSM per ion per fraction-run; ions recur across fractions and mixtures",
+                                      "one PSM per ion per mixture, the highest summed intensity across fractions")),
                   file.path(res_dir, "mouse_summarisation_scopes.tsv"))
     }
     invisible(NULL)
