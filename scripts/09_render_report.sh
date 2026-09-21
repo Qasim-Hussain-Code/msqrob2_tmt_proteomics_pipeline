@@ -45,6 +45,9 @@ if [[ -n "${CONDA_PREFIX_PATH:-}" && -d "$CONDA_PREFIX_PATH" ]]; then
 fi
 mkdir -p "$ROOT/results"
 ( cd "$ROOT/scripts" && "$QUARTO" render 09_report.qmd --to html --output report.html --output-dir "$ROOT/results" )
+# Quarto embeds the whole Bootstrap Icons stylesheet; one icon rule is
+# removed afterwards, see scripts/lib/strip_icon_rule.R.
+"$RSCRIPT" "$ROOT/scripts/lib/strip_icon_rule.R" "$ROOT/results/report.html"
 END=$(date +%s)
 printf "stage\telapsed_s\tpeak_rss_mb\tnote\n09_report\t%d\tNA\tquarto %s\n" "$((END-START))" "$("$QUARTO" --version 2>/dev/null | head -1)" > "$ROOT/logs/09_report.resources.tsv"
 date -u +%Y-%m-%dT%H:%M:%SZ > "$STAMP"
