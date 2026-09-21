@@ -173,7 +173,9 @@ manifest_path <- function(conf, name) {
 
 write_tsv <- function(x, path) {
     dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
-    fwrite(as.data.table(x), path, sep = "\t", na = "NA", quote = FALSE)
+    ## quote = "auto" quotes only fields that contain a tab, a newline
+    ## or a quote; plain values stay unquoted.
+    fwrite(as.data.table(x), path, sep = "\t", na = "NA", quote = "auto")
     message("wrote ", path)
 }
 

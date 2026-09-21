@@ -169,7 +169,7 @@ for (ds in c("spikein1", "spikein1_ms2")) {
         marked <- grepl("UPS", rd$Marked.as)
         keep <- !dup & rd$Rank == 1 & !grepl(";", rd$Protein.Accessions) & rd$Protein.Accessions != "" &
             ((is_ups_acc & marked) | (!is_ups_acc & !marked))
-        h <- cd[Run == r & Condition == "1", sample]; l <- cd[Run == r & Condition == "0.125", sample]
+        h <- cd[run_short == r & Condition == "1", sample]; l <- cd[run_short == r & Condition == "0.125", sample]
         fc <- log2(rowMeans(x[, h, drop = FALSE], na.rm = TRUE)) - log2(rowMeans(x[, l, drop = FALSE], na.rm = TRUE))
         psm_rows[[length(psm_rows) + 1L]] <- data.table(
             dataset = ds, run = r, is_ups = is_ups_acc, interference = rd$Isolation.Interference....,

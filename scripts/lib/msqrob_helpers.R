@@ -117,6 +117,9 @@ fit_psm_level <- function(qf, i, formula, fcol, hypotheses, params, robust = TRU
 ## data for that protein carry no evidence of, say, a mixture effect
 ## beyond what the residuals already explain. With three mixtures that
 ## is expected to be common and is reported, not hidden.
+## lme4 messages end with a newline, which would break a TSV row.
+clean_msg <- function(msgs) gsub("[[:space:]]+", " ", trimws(paste(unique(msgs), collapse = " | ")))
+
 lmer_diagnostics <- function(qf, i, formula, psm_level = FALSE, fcol = "Protein.Accessions",
                              max_proteins = Inf, seed = 20260921) {
     se <- getWithColData(qf, i)
@@ -150,7 +153,7 @@ lmer_diagnostics <- function(qf, i, formula, psm_level = FALSE, fcol = "Protein.
             error = function(e) { msgs <<- c(msgs, conditionMessage(e)); NULL })
         if (is.null(fit)) {
             out[[k]] <- data.table(protein = p, n_obs = nrow(d), status = "error", singular = NA,
-                                   sigma2 = NA_real_, messages = paste(unique(msgs), collapse = " | "))
+                                   sigma2 = NA_real_, messages = clean_msg(msgs))
             next
         }
         vc <- as.data.frame(VarCorr(fit))
@@ -159,7 +162,7 @@ lmer_diagnostics <- function(qf, i, formula, psm_level = FALSE, fcol = "Protein.
         row <- data.table(protein = p, n_obs = nrow(d),
                           status = if (any(grepl("converge", msgs))) "convergence_warning" else "ok",
                           singular = isSingular(fit),
-                          messages = paste(unique(msgs), collapse = " | "))
+                          messages = clean_msg(msgs))
         for (nm in names(comps)) row[[nm]] <- comps[[nm]]
         out[[k]] <- row
     }

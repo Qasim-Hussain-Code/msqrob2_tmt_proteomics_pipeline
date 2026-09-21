@@ -303,7 +303,9 @@ for (a in acquisitions) for (dsg in names(designs)) {
 if (postprocess_only) {
     results <- fread(file.path(res_dir, "spikein1_benchmark_results.tsv.gz"))
     vlog <- fread(file.path(res_dir, "spikein1_benchmark_variants.tsv"))
-    diag <- fread(file.path(res_dir, "spikein1_lmer_diagnostics.tsv"))
+    diag <- rbindlist(lapply(list.files(ckpt_dir, pattern = "^diag_.*[.]rds$", full.names = TRUE), readRDS), fill = TRUE)
+    diag[, messages := gsub("[[:space:]]+", " ", trimws(messages))]
+    write_tsv(diag, file.path(res_dir, "spikein1_lmer_diagnostics.tsv"))
     metrics <- rbindlist(lapply(split(results, by = c("acquisition", "design", "variant")), function(r) {
         met <- rbindlist(lapply(c(0.01, 0.05, 0.10), function(al) benchmark_metrics(r, expected, alpha = al)))
         met[, `:=`(acquisition = r$acquisition[1], design = r$design[1], variant = r$variant[1], level = r$level[1],
