@@ -1,0 +1,138 @@
+---
+title: "TMT differential abundance with msqrob2 mixed models: spike-in benchmark and mouse adipose diet study"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+    code-fold: true
+    df-print: paged
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+suppressPackageStartupMessages({
+    library("data.table")
+    library("knitr")
+})
+root <- normalizePath(file.path(getwd(), ".."), winslash = "/")
+res <- function(f) fread(file.path(root, "results", f))
+fig <- function(f) file.path(root, "figures", f)
+has <- function(f) file.exists(file.path(root, "results", f))
+fmt <- function(x, d = 3) formatC(x, digits = d, format = "f")
+```
+
+Every number in this report is read from a file in `results/` or `logs/` at render time. The README carries the interpretation; this document is the full set of tables behind it.
+
+# Data
+
+```{r data}
+kable(res("data_checksums.tsv")[, .(dataset, file, source, size_bytes, md5, md5_source, status)], caption = "Input files and their verification")
+kable(res("zenodo_record.tsv")[, .(record_id, doi, revision, publication_date, license, n_files, total_bytes)], caption = "Zenodo record as enumerated through the API")
+kable(res("spikein1_acquisition.tsv")[, .(dataset, acquisition, proteomexchange, raw_file_date)], caption = "Which spike-in table is which acquisition")
+kable(res("psm_counts_raw_all.tsv")[, .(n_runs = .N, psms = sum(n_psms), proteins = max(n_proteins)), by = dataset], caption = "Raw PSM tables")
+kable(res("mouse_design_by_mixture.tsv"), caption = "Mouse channels per condition and mixture (Long_M: aged mice outside the two by two; Norm: pooled references)")
+kable(res("mouse_run_structure.tsv")[, .(n_fractions = .N, n_psms = sum(n_psms)), by = Mixture], caption = "Mouse fractions per mixture, derived from the annotation and the PSM table")
+```
+
+# Preprocessing
+
+```{r filters}
+for (ds in c("spikein1", "spikein1_ms2", "mouse")) {
+    print(kable(res(paste0(ds, "_filter_log.tsv"))[, .(step, psms_before, psms_after, removed, criterion)], caption = paste("Filter log:", ds)))
+}
+kable(rbindlist(lapply(c("spikein1", "spikein1_ms2", "mouse"), function(ds) res(paste0(ds, "_missingness.tsv"))))[
+    , .(runs = .N, psms_before_filters = sum(n_psms), psms_after = sum(n_psms_after_filters),
+        frac_channel_values_missing_before = round(sum(channel_values_na) / sum(n_psms * 10), 4),
+        frac_channel_values_missing_after = round(sum(channel_values_na_after) / sum(n_psms_after_filters * 10), 4)), by = dataset],
+    caption = "Channel-level missingness before and after the PSM filters")
+kable(dcast(rbindlist(lapply(c("spikein1", "spikein1_ms2", "mouse"), function(ds) res(paste0(ds, "_ion_runs_observed.tsv")))), n_runs ~ dataset, value.var = "n_ions"),
+      caption = "Run-level missingness: number of ions observed in exactly n runs")
+```
+
+![Per-channel densities before and after median centering, spike-in SPS-MS3, mixture 1](`r fig("spikein1_normalisation_densities.png")`)
+
+![One protein before and after robustSummary, spike-in SPS-MS3](`r fig("spikein1_summarisation_example.png")`)
+
+![MDS of the spike-in protein values: channels cluster by run](`r fig("spikein1_mds.png")`)
+
+![MDS of the mouse mixture-scope protein values: mice cluster by mixture](`r fig("mouse_mds.png")`)
+
+# Spike-in benchmark
+
+```{r bench}
+v <- res("spikein1_benchmark_variants.tsv")
+kable(v[, .(acquisition, design, variant, n_proteins, n_fit_error, fit_seconds, n_channels, note)], caption = "Every workflow variant that was fitted, with its cost")
+if (has("spikein1_psm_subset.tsv")) kable(res("spikein1_psm_subset.tsv"), caption = "PSM-level subset decision")
+m <- res("spikein1_benchmark_metrics.tsv")[alpha == 0.05]
+kable(m[acquisition == "ms3" & design == "balanced", .(variant, contrast, n_tested, tp, fp, fdp = round(fdp, 3), sensitivity = round(sensitivity, 3),
+                                                       ups_median_log2fc = round(ups_median_log2fc, 3), expected_log2fc = round(expected_log2fc, 3), bias = round(bias, 3))],
+      caption = "Balanced design, SPS-MS3, BH 5%: all variants and contrasts")
+kable(m[design == "unbalanced", .(variant, contrast, n_tested, tp, fp, fdp = round(fdp, 3), sensitivity = round(sensitivity, 3))],
+      caption = "Unbalanced design, SPS-MS3, BH 5%")
+kable(res("spikein1_unbalanced_design.tsv"), caption = "Channels kept in the unbalanced design")
+kable(m[acquisition == "ms2", .(variant, contrast, n_tested, tp, fp, fdp = round(fdp, 3), sensitivity = round(sensitivity, 3), ups_median_log2fc = round(ups_median_log2fc, 3))],
+      caption = "MS2 acquisition, balanced design, BH 5%")
+kable(res("spikein1_naive_vs_mixed.tsv"), caption = "Naive against mixed, head to head")
+kable(res("spikein1_lmer_diagnostics_summary.tsv"), caption = "lme4 diagnostics: singular fits and median variance components")
+```
+
+![FDP and sensitivity by workflow](`r fig("fig_benchmark_fdp.png")`)
+
+![Naive against mixed, balanced against unbalanced](`r fig("fig_naive_vs_mixed.png")`)
+
+![Reference channel treatments](`r fig("fig_reference_treatment.png")`)
+
+# Ratio compression
+
+```{r compression}
+kable(res("spikein1_compression_by_contrast.tsv")[, lapply(.SD, function(x) if (is.numeric(x)) round(x, 3) else x)], caption = "Observed against expected, per contrast and acquisition")
+kable(res("spikein1_compression_slope.tsv")[, lapply(.SD, function(x) if (is.numeric(x)) round(x, 3) else x)], caption = "Attenuation slopes")
+kable(res("spikein1_compression_by_interference.tsv")[is_ups == TRUE, lapply(.SD, function(x) if (is.numeric(x)) round(x, 3) else x)], caption = "PSM-level fold change by isolation interference bin, UPS1 PSMs")
+kable(res("spikein1_interference_summary.tsv")[, lapply(.SD, function(x) if (is.numeric(x)) round(x, 3) else x)], caption = "Isolation interference of the identifying scans")
+```
+
+![Compression](`r fig("spikein1_compression.png")`)
+
+![Compression by isolation interference](`r fig("spikein1_compression_by_interference.png")`)
+
+# Mouse adipose diet study
+
+```{r mouse}
+kable(res("mouse_models.tsv"), caption = "Models fitted")
+kable(dcast(res("mouse_significant_counts.tsv")[alpha == 0.05], contrast ~ model, value.var = "n_significant"), caption = "Significant proteins at BH 5%")
+kable(dcast(res("mouse_significant_counts.tsv")[alpha == 0.10], contrast ~ model, value.var = "n_significant"), caption = "Significant proteins at BH 10%")
+kable(res("mouse_scope_comparison.tsv")[, lapply(.SD, function(x) if (is.numeric(x)) round(x, 3) else x)], caption = "Fraction-run against mixture scope")
+kable(res("mouse_naive_vs_mixed.tsv")[, lapply(.SD, function(x) if (is.numeric(x)) round(x, 3) else x)], caption = "Naive against mixed, per scope")
+kable(res("mouse_lmer_diagnostics_summary.tsv")[, lapply(.SD, function(x) if (is.numeric(x)) signif(x, 3) else x)], caption = "lme4 diagnostics: singular fits and variance components")
+kable(res("mouse_bcaa_keyword_check.tsv")[, -"terms"], caption = "Keyword check on protein descriptions, 8 week contrast")
+if (has("mouse_bcaa_kegg_enrichment.tsv")) kable(res("mouse_bcaa_kegg_enrichment.tsv")[, lapply(.SD, function(x) if (is.numeric(x)) signif(x, 3) else x)], caption = "KEGG mmu00280 against the tested background")
+if (has("mouse_bcaa_kegg_by_model.tsv")) kable(res("mouse_bcaa_kegg_by_model.tsv")[, lapply(.SD, function(x) if (is.numeric(x)) signif(x, 3) else x)], caption = "The same pathway check under every model")
+```
+
+![Design matrix](`r fig("mouse_design_matrix.png")`)
+
+![Volcano plots, fraction-run mixed model](`r fig("mouse_volcano.png")`)
+
+![Counts per model](`r fig("fig_mouse_counts.png")`)
+
+![Interaction](`r fig("fig_mouse_interaction.png")`)
+
+![Variance components](`r fig("fig_variance_components.png")`)
+
+# Resources
+
+```{r resources}
+kable(fread(file.path(root, "logs", "resources_all.tsv")), caption = "Elapsed time and peak resident memory per stage, as measured")
+```
+
+# Session information
+
+```{r session}
+kable(fread(file.path(root, "config", "r_packages.tsv"))[, .(package, version)], caption = "Packages recorded at install time")
+sessionInfo()
+```
