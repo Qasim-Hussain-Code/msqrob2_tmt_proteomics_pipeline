@@ -293,7 +293,8 @@ desc[, gene := sub(".*GN=([^ ]+).*", "\\1", Master.Protein.Descriptions)]
 desc[!grepl("GN=", Master.Protein.Descriptions), gene := protein]
 res_v <- merge(results[model == "fraction_run_mixed"], desc, by = "protein", all.x = TRUE)
 res_v[, contrast := factor(contrast, levels = labels)]
-p_volc <- ggplot(res_v[!is.na(pval)], aes(x = logFC, y = -log10(pval))) +
+res_v <- res_v[!is.na(pval)][order(adjPval < 0.05)]
+p_volc <- ggplot(res_v, aes(x = logFC, y = -log10(pval))) +
     geom_point(aes(colour = adjPval < 0.05), size = 0.7, alpha = 0.7) +
     geom_text_repel(data = res_v[adjPval < 0.05], aes(label = gene), size = 2.4, max.overlaps = 25) +
     scale_colour_manual(values = c(`FALSE` = "grey60", `TRUE` = "firebrick"), name = "BH adjusted p < 0.05") +
@@ -307,7 +308,8 @@ save_fig(p_volc, file.path(fig_dir, "mouse_volcano.png"), 12, 4.2)
 side <- merge(results[contrast == "HF_vs_LF_8wk" & level == "protein", .(protein, model, logFC, adjPval)],
               results[contrast == "HF_vs_LF_8wk" & model == "fraction_run_mixed", .(protein, logFC_ref = logFC)], by = "protein")
 side[, model := factor(model, levels = models$model)]
-p_side <- ggplot(side[!is.na(adjPval)], aes(x = logFC_ref, y = logFC, colour = adjPval < 0.05)) +
+side <- side[!is.na(adjPval)][order(adjPval < 0.05)]   # significant points drawn last
+p_side <- ggplot(side, aes(x = logFC_ref, y = logFC, colour = adjPval < 0.05)) +
     geom_abline(slope = 1, intercept = 0, colour = "grey70") +
     geom_point(size = 0.6, alpha = 0.6) +
     scale_colour_manual(values = c(`FALSE` = "grey60", `TRUE` = "firebrick"), name = "significant in this model") +
