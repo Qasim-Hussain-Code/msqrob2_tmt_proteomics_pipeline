@@ -144,7 +144,9 @@ tiers <- list(
     naive = list(full = formulas$naive),
     psm = list(full = formula_psm,
                no_run_channel = ~ Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | Run:ionID) + (1 | BioReplicate),
-               no_run_channel_no_bioreplicate = ~ Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | Run:ionID))
+               no_run_channel_no_bioreplicate = ~ Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | Run:ionID),
+               no_mixture = ~ Diet * Duration + (1 | Run) + (1 | Run:ionID),
+               ion_only = ~ Diet * Duration + (1 | Run:ionID))
 )
 
 models <- data.table(
