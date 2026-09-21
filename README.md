@@ -124,13 +124,9 @@ msqrob2 stores each protein's coefficients and their covariance, not the lme4 ob
 
 **Regressed on the expected log2 fold change across all six contrasts and all 40 UPS1 proteins, the observed fold change had a slope of 0.54 at SPS-MS3 and 0.27 at MS2.** Per contrast (`results/spikein1_compression_by_contrast.tsv`), the SPS-MS3 medians were 0.29, 0.44, 0.74, 1.14, 1.42 and 1.86 log2 units against expected values of 0.41, 0.59, 1.00, 2.00, 2.41 and 3.00, with interquartile ranges from 0.10 to 0.65; the MS2 medians were 0.18, 0.29, 0.45, 0.50, 0.70 and 0.98. Both intercepts are near zero (0.09 and 0.11) and both fits explain 62 to 70 per cent of the variance; through the origin the slopes are 0.58 and 0.32 (`results/spikein1_compression_slope.tsv`). The HeLa medians sit within 0.01 log2 units of zero in every contrast under both acquisitions, which is the normalisation check. The comparison is on the same 40 proteins quantified under both acquisitions, so the protein set is not the explanation. Two details in the figure are worth a second look. The MS2 compression is not proportional: the 8-fold contrast comes out at a third of its value and the 1.33-fold contrast at 44 per cent, so the larger the real change, the more of it is lost. And the HeLa boxes are narrower at MS2 than at SPS-MS3, because the third stage of mass spectrometry costs ions: the MS2 acquisition identified 4,881 proteins to the MS3's 4,298 and its reporter values are more precise; they are also less than half as accurate.
 
-![compression by interference](figures/spikein1_compression_by_interference.png)
+**The compression follows the isolation interference of the identifying scan.** For every UPS1 PSM the ratio of the two 500 fmol channels to the two 62.5 fmol channels was computed from the raw reporter intensities and binned by Proteome Discoverer's isolation interference (`results/spikein1_compression_by_interference.tsv`). At MS2 the median falls from 1.16 log2 units in the 508 PSMs with under 10 per cent interference to 0.82 at 40 to 50 per cent and 0.71 at 50 to 75. At SPS-MS3 it falls from 2.04 to 1.66 and 1.67 over the same bins. The interference distributions are similar under both acquisitions (median 20 to 23 per cent, a third of scans above 30), so the difference between the acquisitions is what the third stage removes, not a difference in what was co-isolated. Even the cleanest MS3 scans stop at two thirds of the true value, and Ting et al. did not claim otherwise: SPS-MS3 reduces the distortion, it does not eliminate it.
 
-**The compression follows the isolation interference of the identifying scan.** For every UPS1 PSM the ratio of the two 500 fmol channels to the two 62.5 fmol channels was computed from the raw reporter intensities and binned by Proteome Discoverer's isolation interference (`results/spikein1_compression_by_interference.tsv`). At MS2 the median falls from 1.16 log2 units in the 508 PSMs with under 10 per cent interference to 0.82 at 40 to 50 per cent and 0.71 at 50 to 75. At SPS-MS3 it falls from 2.04 to 1.66 and 1.67 over the same bins. The interference distributions are similar under both acquisitions (median 20 to 23 per cent, a third of scans above 30), so the difference between the panels is what the third stage removes, not a difference in what was co-isolated. Even the cleanest MS3 scans stop at two thirds of the true value, and Ting et al. did not claim otherwise: SPS-MS3 reduces the distortion, it does not eliminate it.
-
-### Figure 4. The benchmark: what each workflow's 5 per cent list contains
-
-![benchmark](figures/fig_benchmark_fdp.png)
+### The benchmark: what each workflow's 5 per cent list contains
 
 **On the balanced spike-in every mixed model recovered 37 to 40 of the 40 UPS1 proteins on the four largest contrasts, and the difference between workflows was almost entirely in the HeLa proteins they also called.** The full table is `results/spikein1_benchmark_metrics.tsv`; the rows below are the SPS-MS3 acquisition, reference channels dropped, BH 5 per cent, with the realised false discovery proportion and the true positives out of 40 for the smallest and the largest contrast, and the cost from `results/spikein1_benchmark_variants.tsv`.
 
@@ -151,7 +147,7 @@ The PSM-level model ran at full scale, all 4,298 proteins, after a pilot on 40 H
 
 The fold change estimates did not depend on the model. Every variant put the median UPS1 log2 fold change at 1.85 for the 8-fold contrast (expected 3.00) and at 0.29 for the 1.33-fold contrast (expected 0.41), to within 0.03; the bias column of the metrics table is the same down every row. Compression is in the reporter ions, and no model of them undoes it.
 
-### Figure 5. Ignoring the plex: naive against mixed, on a balanced and on an unbalanced design
+### Figure 4. Ignoring the plex: naive against mixed, on a balanced and on an unbalanced design
 
 ![naive versus mixed](figures/fig_naive_vs_mixed.png)
 
@@ -189,7 +185,7 @@ O'Brien et al. (Journal of Proteome Research 2018) made the compositional point 
 
 What the two designs together say is this. The cost of ignoring the plex is not a fixed inflation of significance. It depends on whether the contrast is estimated inside the plexes or across them. Inside, the naive model loses most of its power and stays honest about the little it calls; across, the mixture offset becomes the treatment estimate and the naive model's list is mostly wrong. The mouse study has its Long_HF cell almost entirely in one mixture, which is the second case, and it has no ground truth, which is why this section exists.
 
-### Figure 6. Reference channels
+### Figure 5. Reference channels
 
 ![reference treatment](figures/fig_reference_treatment.png)
 
@@ -197,7 +193,7 @@ What the two designs together say is this. The cost of ignoring the plex is not 
 
 For the mixed model the picture is flat. Dropping, keeping as a fifth condition level, or dividing gave 32, 32 and 31 true positives on the 1.33-fold contrast with 3, 3 and 3 false; on the 8-fold contrast 40, 40 and 40 true with 16, 16 and 18 false. Keeping the references as observations of their own condition changed nothing visible because the run effect already had eight channels per run to learn from, and dividing by them made the mixture variance vanish (median 1.5e-10) and the singular fraction rise from 42 to 55 per cent without moving the calls. Dropping is adopted for the mouse analysis, as the msqrob2TMT authors did, on the grounds that it is the treatment that does not spend a channel and does not import another channel's noise, and that the benchmark could not separate it from the alternatives. It barely mattered, and that is the finding.
 
-### Figure 7. The mouse factorial
+### Figure 6. The mouse factorial
 
 ![mouse counts](figures/fig_mouse_counts.png)
 
@@ -217,7 +213,7 @@ Singular fits are the other half. In the fraction-run scope, 1,577 of the 2,863 
 
 **The naive fraction-run model, which counts nine fraction values per mouse as nine mice, called 12, 35, 34 and 6 proteins on the four contrasts against the mixed model's 141, 112, 251 and 40, and 30 of its 35 calls at 18 weeks were proteins the mixed model did not call.** Both halves of the spike-in result are in those numbers (`results/mouse_naive_vs_mixed.tsv`). For most proteins the naive residual is bloated by the between-fraction variance, its standard errors are 1.8 to 2.0 times the mixed model's at the median, and it is conservative. For the 30 naive-only proteins at 18 weeks the picture inverts: 29 of the 30 have the same sign under both models, but the naive estimates are almost twice as large (median absolute log2 fold change 1.37 against 0.73), and for 19 of the 30 the naive standard error is the smaller one, down to a third of the mixed model's. The naive model weights every fraction value equally, so an animal quantified in more fractions counts for more and its values count as independent; the mixed model weights animals and treats a mouse's fractions as one mouse. Nothing in the data marks those 30 as wrong; the unbalanced spike-in is what says which model to trust. At mixture scope the naive model called 0, 1, 0 and 0 proteins, because with one value per mouse its residual holds the entire between-mixture variance.
 
-### Figure 8. Variance components
+### Figure 7. Variance components
 
 ![variance components](figures/fig_variance_components.png)
 
@@ -291,7 +287,7 @@ Measured on the build machine (Windows 11, 16 threads, Git Bash, serial BiocPara
 | 08 figures | 6 s | 1.1 GB | |
 | 09 report | 6 s | | quarto 1.9.36; `results/report.html` |
 
-The benchmark and the mouse stage overlapped for part of their runs on this machine; the per-stage figures are each process's own peak resident set. The claim that the pipeline runs in 4 GB holds for every stage except the PSM-level spike-in arm, and the paragraph under Figure 4 says what to pass on a 4 GB machine.
+The benchmark and the mouse stage overlapped for part of their runs on this machine; the per-stage figures are each process's own peak resident set. The claim that the pipeline runs in 4 GB holds for every stage except the PSM-level spike-in arm, and the benchmark section says what to pass on a 4 GB machine.
 
 ## Limitations
 
