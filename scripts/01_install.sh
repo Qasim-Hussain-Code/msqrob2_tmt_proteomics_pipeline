@@ -137,7 +137,7 @@ fi
 
 set_conf RSCRIPT "$RSCRIPT_USE"
 
-# shellcheck is optional for running the pipeline but the final checks use it.
+# The shellcheck binary is optional for running the pipeline; the final checks use it.
 if ! grep -q '^SHELLCHECK=' "$ROOT/project.conf"; then
     set_conf SHELLCHECK "$(command -v shellcheck || true)"
 fi
