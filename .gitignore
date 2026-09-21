@@ -51,3 +51,8 @@ project.conf
 .idea/
 .DS_Store
 Thumbs.db
+
+# Console logs and stage stamps are machine-specific; the measured
+# resource tables and the install session info are tracked.
+logs/*.log
+logs/*.done
