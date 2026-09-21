@@ -55,7 +55,10 @@ source(file.path(root, "scripts", "lib", "msqrob_helpers.R"))
 conf <- read_conf(root)
 opt <- parse_args()
 STAGE <- "05_benchmark_workflows"
-if (stage_already_done(STAGE, conf, force = opt$force)) quit(save = "no")
+## --postprocess-only recomputes every summary table from the saved
+## per-protein results without refitting anything.
+postprocess_only <- isTRUE(opt$`postprocess-only`)
+if (!postprocess_only && stage_already_done(STAGE, conf, force = opt$force)) quit(save = "no")
 timer <- stage_begin(STAGE, conf)
 set.seed(20260921)
 register_parallel(if (is.null(opt$workers)) conf$WORKERS else opt$workers)
@@ -165,6 +168,7 @@ choose_psm_subset <- function(qf, budget_s) {
 ## ---- Main loop -----------------------------------------------------------
 
 all_results <- list(); all_metrics <- list(); variant_log <- list(); diag_out <- list(); subset_log <- list()
+if (postprocess_only) { acquisitions <- character(); designs <- list() }
 
 ## lme4 prints "boundary (singular) fit" for every singular protein and
 ## msqrob2 does not silence it; thousands of those lines would bury the
@@ -261,17 +265,29 @@ for (a in acquisitions) for (dsg in names(designs)) {
 
 ## ---- Write --------------------------------------------------------------
 
-results <- rbindlist(all_results)
-metrics <- rbindlist(all_metrics)
-vlog <- rbindlist(variant_log)
-diag <- rbindlist(diag_out, fill = TRUE)
-
-fwrite(results, file.path(res_dir, "spikein1_benchmark_results.tsv.gz"), sep = "\t", compress = "gzip")
-message("wrote results/spikein1_benchmark_results.tsv.gz (", nrow(results), " rows)")
+if (postprocess_only) {
+    results <- fread(file.path(res_dir, "spikein1_benchmark_results.tsv.gz"))
+    vlog <- fread(file.path(res_dir, "spikein1_benchmark_variants.tsv"))
+    diag <- fread(file.path(res_dir, "spikein1_lmer_diagnostics.tsv"))
+    metrics <- rbindlist(lapply(split(results, by = c("acquisition", "design", "variant")), function(r) {
+        met <- rbindlist(lapply(c(0.01, 0.05, 0.10), function(al) benchmark_metrics(r, expected, alpha = al)))
+        met[, `:=`(acquisition = r$acquisition[1], design = r$design[1], variant = r$variant[1], level = r$level[1],
+                   reference = r$reference[1], structure = r$structure[1], robust = r$robust[1], ridge = r$ridge[1], engine = r$engine[1])]
+        met
+    }))
+    message("postprocess-only: reloaded ", nrow(results), " result rows")
+} else {
+    results <- rbindlist(all_results)
+    metrics <- rbindlist(all_metrics)
+    vlog <- rbindlist(variant_log)
+    diag <- rbindlist(diag_out, fill = TRUE)
+    fwrite(results, file.path(res_dir, "spikein1_benchmark_results.tsv.gz"), sep = "\t", compress = "gzip")
+    message("wrote results/spikein1_benchmark_results.tsv.gz (", nrow(results), " rows)")
+    write_tsv(vlog, file.path(res_dir, "spikein1_benchmark_variants.tsv"))
+    write_tsv(diag, file.path(res_dir, "spikein1_lmer_diagnostics.tsv"))
+    if (length(subset_log)) write_tsv(rbindlist(subset_log), file.path(res_dir, "spikein1_psm_subset.tsv"))
+}
 write_tsv(metrics, file.path(res_dir, "spikein1_benchmark_metrics.tsv"))
-write_tsv(vlog, file.path(res_dir, "spikein1_benchmark_variants.tsv"))
-write_tsv(diag, file.path(res_dir, "spikein1_lmer_diagnostics.tsv"))
-if (length(subset_log)) write_tsv(rbindlist(subset_log), file.path(res_dir, "spikein1_psm_subset.tsv"))
 
 ## Diagnostics summary: singular fits and the size of each variance component.
 vc_cols <- grep("^var_|^sigma2$", names(diag), value = TRUE)
@@ -302,10 +318,42 @@ head_to_head[, fdp_naive := fp_naive / sig_naive]
 write_tsv(head_to_head, file.path(res_dir, "spikein1_naive_vs_mixed.tsv"))
 print(head_to_head[, .(design, contrast, sig_mixed, fp_mixed, fdp_mixed, sig_naive, fp_naive, fdp_naive, median_se_ratio_naive_over_mixed)])
 
+## What the false positives are. A HeLa protein called significant by
+## the mixed model is either a genuinely wrong call or a small,
+## run-consistent shift that the design produces (the channel with more
+## UPS1 carries less HeLa per unit of total peptide). Their sign and
+## size say which. The same table is written for every variant so that
+## the pattern can be compared across models.
+fp <- results[!is.na(adjPval) & adjPval < 0.05 & !grepl("ups", protein)]
+fp_summary <- fp[, .(n_fp = .N, median_logfc = median(logFC), median_abs_logfc = median(abs(logFC)),
+                     frac_negative = mean(logFC < 0), frac_abs_below_0.1 = mean(abs(logFC) < 0.1),
+                     frac_abs_below_0.2 = mean(abs(logFC) < 0.2), median_se = median(se)),
+                 by = .(acquisition, design, variant, contrast)]
+write_tsv(fp_summary, file.path(res_dir, "spikein1_false_positive_summary.tsv"))
+
+## Sensitivity of the FDP to an effect size floor, post hoc and reported
+## for every floor tried. The floors are arbitrary; none was used to
+## pick a result. A floor of 0 is the plain BH list.
+floors <- c(0, 0.1, 0.2, 0.3, 0.5)
+fdp_floor <- rbindlist(lapply(floors, function(fl) {
+    r <- results[!is.na(adjPval)]
+    r[, called := adjPval < 0.05 & abs(logFC) >= fl]
+    r[, is_ups := grepl("ups", protein)]
+    r[, .(logfc_floor = fl, n_called = sum(called), tp = sum(called & is_ups), fp = sum(called & !is_ups),
+          fdp = if (sum(called) == 0) NA_real_ else sum(called & !is_ups) / sum(called),
+          sensitivity = sum(called & is_ups) / sum(is_ups)),
+      by = .(acquisition, design, variant, contrast)]
+}))
+write_tsv(fdp_floor, file.path(res_dir, "spikein1_fdp_by_effect_size_floor.tsv"))
+
 ## Which channels the unbalanced design kept, for the README.
 ub <- unbalanced_rule(readRDS(file.path(qf_dir, "spikein1_preprocessed.rds")))
 write_tsv(as.data.table(as.data.frame(colData(ub)))[Condition != "Norm", .N, by = .(Mixture, Condition)][order(Mixture, Condition)],
           file.path(res_dir, "spikein1_unbalanced_design.tsv"))
 
-stage_end(timer, note = sprintf("acquisitions=%s; %d variants", paste(acquisitions, collapse = ","), nrow(vlog)))
-stage_mark_done(STAGE, conf)
+if (postprocess_only) {
+    message("postprocess-only: summary tables rewritten")
+} else {
+    stage_end(timer, note = sprintf("acquisitions=%s; %d variants", paste(acquisitions, collapse = ","), nrow(vlog)))
+    stage_mark_done(STAGE, conf)
+}
