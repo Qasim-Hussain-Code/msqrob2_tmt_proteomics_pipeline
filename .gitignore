@@ -1,0 +1,53 @@
+# Raw and derived mass spectrometry data. The PSM tables are a quarter
+# gigabyte each and are re-downloaded and checksum-verified by
+# scripts/02_download_data.sh, so they never belong in the history.
+data/
+!data/README.md
+*.raw
+*.RAW
+*.mzML
+*.mzML.gz
+*_psms.txt
+*_psms.csv
+*.msf
+
+# BiocFileCache directory used by the download script
+.bfc/
+BiocFileCache/
+
+# R session artefacts
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+renv/library/
+renv/staging/
+renv/local/
+
+# Rendered report and intermediate build files. The rendered HTML is
+# large and reproducible; only the source .qmd ships.
+results/*.html
+results/*_files/
+scripts/*_files/
+scripts/*.html
+*.quarto/
+.quarto/
+
+# Intermediate serialised objects are rebuilt by the pipeline
+results/*.rds
+results/qfeatures/
+
+# Sage search arm outputs
+results/sage/
+*.sage.tsv
+*.sage.parquet
+
+# Local machine configuration written by scripts/00_configure.sh
+project.conf
+
+# Editor and OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
