@@ -258,23 +258,42 @@ fit_tiered <- function(qf, i, tiers, hypotheses, params, robust = TRUE, ridge = 
     tier <- setNames(rep(names(tiers)[1], length(models)), names(models))
     tier[is_err(models)] <- "fitError"
     tier_log <- data.table(tier = names(tiers)[1], attempted = length(models), fitted = sum(!is_err(models)))
+    ## msqrob2 moderates the variance inside every call with
+    ## limma::squeezeVar, which errors when a subset's variances are
+    ## degenerate (a tier where almost nothing fits). A tier is therefore
+    ## tried whole and, on failure, in chunks of 25 proteins, so that only
+    ## the chunk that cannot be moderated stays unfitted. The moderation
+    ## is redone across all proteins afterwards in any case.
+    fit_subset <- function(todo, formula) {
+        sub <- if (psm_level) qf[rowData(qf[[i]])[[fcol]] %in% todo, , i] else qf[todo, , i]
+        sub <- fit_one(sub, formula, "refit")
+        newm <- as.list(rowData(sub[[if (psm_level) "refit" else i]])[["msqrobModels"]])
+        names(newm) <- rownames(sub[[if (psm_level) "refit" else i]])
+        newm
+    }
     for (k in seq_along(tiers)[-1]) {
         todo <- names(tier)[tier == "fitError"]
         if (!length(todo)) break
-        sub <- if (psm_level) qf[rowData(qf[[i]])[[fcol]] %in% todo, , i] else qf[todo, , i]
-        sub <- fit_one(sub, tiers[[k]], "refit")
-        newm <- as.list(rowData(sub[[if (psm_level) "refit" else i]])[["msqrobModels"]])
-        names(newm) <- rownames(sub[[if (psm_level) "refit" else i]])
-        ok <- !is_err(newm)
+        newm <- tryCatch(fit_subset(todo, tiers[[k]]), error = function(e) NULL)
+        n_failed_chunks <- 0L
+        if (is.null(newm)) {
+            newm <- list()
+            for (chunk in split(todo, ceiling(seq_along(todo) / 25))) {
+                got <- tryCatch(fit_subset(chunk, tiers[[k]]), error = function(e) { n_failed_chunks <<- n_failed_chunks + 1L; NULL })
+                if (!is.null(got)) newm <- c(newm, got)
+            }
+        }
+        ok <- if (length(newm)) !is_err(newm) else logical()
         models[names(newm)[ok]] <- newm[ok]
         tier[names(newm)[ok]] <- names(tiers)[k]
         tier_log <- rbind(tier_log, data.table(tier = names(tiers)[k], attempted = length(todo), fitted = sum(ok)))
+        if (n_failed_chunks) message("   tier ", names(tiers)[k], ": ", n_failed_chunks, " chunk(s) of 25 could not be variance-moderated and stay unfitted")
     }
     ## Re-estimate the moderated variance across every protein together;
     ## the tiers were squeezed separately by their own msqrob calls.
     vars <- vapply(models, function(m) if (m@type == "fitError") NA_real_ else getVar(m), numeric(1))
     dfs <- vapply(models, function(m) if (m@type == "fitError") NA_real_ else getDF(m), numeric(1))
-    okv <- is.finite(vars) & is.finite(dfs) & dfs > 0
+    okv <- is.finite(vars) & vars > 0 & is.finite(dfs) & dfs > 0
     hlp <- limma::squeezeVar(var = vars[okv], df = dfs[okv])
     idx <- which(okv)
     for (j in seq_along(idx)) {
