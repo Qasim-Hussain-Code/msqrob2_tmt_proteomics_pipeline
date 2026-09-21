@@ -166,8 +166,11 @@ lmer_diagnostics <- function(qf, i, formula, psm_level = FALSE, fcol = "Protein.
 fit_limma_dupcor <- function(mat, cd, design_formula, block, hypotheses, params, contrast_labels = NULL) {
     design <- model.matrix(design_formula, data = cd)
     colnames(design) <- sub("^Condition", "Condition", colnames(design))
-    L <- makeContrast(hypotheses, parameterNames = params)
-    L <- L[colnames(design), , drop = FALSE]
+    ## Rows for every design column, zero for parameters no hypothesis
+    ## uses (the reference channel level when it is kept).
+    L0 <- makeContrast(hypotheses, parameterNames = params)
+    L <- matrix(0, nrow = ncol(design), ncol = ncol(L0), dimnames = list(colnames(design), colnames(L0)))
+    L[rownames(L0), ] <- L0
     t0 <- Sys.time()
     dc <- duplicateCorrelation(mat, design, block = cd[[block]])
     fit <- lmFit(mat, design, block = cd[[block]], correlation = dc$consensus)
@@ -213,4 +216,77 @@ benchmark_metrics <- function(res, expected, alpha = 0.05) {
         bias = median(logFC[is_ups], na.rm = TRUE) - expected_log2fc[1],
         alpha = alpha
     ), by = contrast]
+}
+
+## ---- Tiered fitting: refit proteins that the full model cannot fit ---------
+##
+## msqrob2 returns a fitError when the fixed effects are not estimable
+## from a protein's data (an empty factorial cell) or when lme4 refuses
+## the random effects (a grouping factor with as many levels as
+## observations, or a single sampled level). The second kind is a
+## property of the model, not of the protein: a protein quantified in
+## one fraction per mouse gives one value per mouse, and a mouse random
+## effect then has nothing to estimate beyond the residual. Following
+## the msqrob2TMT vignette's refit of one-hit wonders, such proteins are
+## refitted with the next simpler random structure in `tiers`, the
+## moderated variance is re-estimated across all proteins together (as
+## the vignette's msqrobRefit does), and the tier that produced each
+## protein's result is recorded. Nothing is dropped silently: a protein
+## that fails every tier stays a fitError in the results.
+fit_tiered <- function(qf, i, tiers, hypotheses, params, robust = TRUE, ridge = FALSE,
+                       psm_level = FALSE, fcol = "Protein.Accessions", name = "proteins_msqrob",
+                       contrast_labels = NULL) {
+    stopifnot(is.list(tiers), !is.null(names(tiers)))
+    L <- build_contrasts(hypotheses, params, ridge)
+    t0 <- Sys.time()
+    fit_one <- function(obj, formula, set_name) {
+        if (psm_level) {
+            obj <- msqrobAggregate(obj, i = i, fcol = fcol, formula = formula, robust = robust, ridge = ridge,
+                                   name = set_name, modelColumnName = "msqrobModels",
+                                   aggregateFun = MsCoreUtils::robustSummary)
+        } else {
+            obj <- msqrob(obj, i = i, formula = formula, robust = robust, ridge = ridge,
+                          modelColumnName = "msqrobModels", overwrite = TRUE)
+        }
+        obj
+    }
+    set <- if (psm_level) name else i
+    qf <- fit_one(qf, tiers[[1]], set)
+    models <- as.list(rowData(qf[[set]])[["msqrobModels"]])
+    names(models) <- rownames(qf[[set]])
+    is_err <- function(ms) vapply(ms, function(m) m@type == "fitError", logical(1))
+    tier <- setNames(rep(names(tiers)[1], length(models)), names(models))
+    tier[is_err(models)] <- "fitError"
+    tier_log <- data.table(tier = names(tiers)[1], attempted = length(models), fitted = sum(!is_err(models)))
+    for (k in seq_along(tiers)[-1]) {
+        todo <- names(tier)[tier == "fitError"]
+        if (!length(todo)) break
+        sub <- if (psm_level) qf[rowData(qf[[i]])[[fcol]] %in% todo, , i] else qf[todo, , i]
+        sub <- fit_one(sub, tiers[[k]], "refit")
+        newm <- as.list(rowData(sub[[if (psm_level) "refit" else i]])[["msqrobModels"]])
+        names(newm) <- rownames(sub[[if (psm_level) "refit" else i]])
+        ok <- !is_err(newm)
+        models[names(newm)[ok]] <- newm[ok]
+        tier[names(newm)[ok]] <- names(tiers)[k]
+        tier_log <- rbind(tier_log, data.table(tier = names(tiers)[k], attempted = length(todo), fitted = sum(ok)))
+    }
+    ## Re-estimate the moderated variance across every protein together;
+    ## the tiers were squeezed separately by their own msqrob calls.
+    vars <- vapply(models, function(m) if (m@type == "fitError") NA_real_ else getVar(m), numeric(1))
+    dfs <- vapply(models, function(m) if (m@type == "fitError") NA_real_ else getDF(m), numeric(1))
+    okv <- is.finite(vars) & is.finite(dfs) & dfs > 0
+    hlp <- limma::squeezeVar(var = vars[okv], df = dfs[okv])
+    idx <- which(okv)
+    for (j in seq_along(idx)) {
+        models[[idx[j]]]@varPosterior <- as.numeric(hlp$var.post[j])
+        models[[idx[j]]]@dfPosterior <- as.numeric(hlp$df.prior + dfs[idx[j]])
+    }
+    rowData(qf[[set]])[["msqrobModels"]] <- models[rownames(qf[[set]])]
+    fit_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    qf <- hypothesisTest(qf, i = set, contrast = L, modelColumn = "msqrobModels", overwrite = TRUE)
+    res <- collect_results(qf[[set]], L, "msqrobModels", contrast_labels)
+    res[, fit_tier := tier[protein]]
+    tier_log[, formula := vapply(names(tiers), function(n) paste(deparse(tiers[[n]]), collapse = ""), character(1))[tier]]
+    list(results = res, fit_seconds = fit_s, n_proteins = nrow(qf[[set]]), tier_log = tier_log,
+         df_prior = hlp$df.prior, var_prior = hlp$var.prior)
 }

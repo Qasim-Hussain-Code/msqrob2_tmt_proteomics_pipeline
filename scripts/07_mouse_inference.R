@@ -13,6 +13,11 @@
 ##   naive (either scope)      : ~ Diet * Duration
 ##   PSM level, mixed          : ~ Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | Run:Channel) + (1 | Run:ionID) + (1 | BioReplicate)
 ##
+## Proteins the full model cannot fit are refitted with the next simpler
+## random structure (fit_tiered in scripts/lib/msqrob_helpers.R), the
+## tier is recorded per protein, and the counts per tier are reported.
+## The fixed effects never change between tiers.
+##
 ## In the fraction-run scope each mouse contributes nine protein values
 ## (one per fraction), so the mouse random effect is identifiable and
 ## Run carries the fraction. In the mixture scope each mouse contributes
@@ -88,6 +93,13 @@ prep_mouse <- function(qf, sets) {
     cd$Diet <- factor(cd$Diet, levels = c("LF", "HF"))
     cd$Duration <- factor(cd$Duration, levels = c("Short", "Long"))
     colData(qf) <- cd
+    ## The assay-level colData must not repeat these columns as
+    ## character, or getWithColData refuses the factor versions.
+    for (i in sets) {
+        se <- qf[[i]]
+        colData(se) <- colData(se)[, setdiff(colnames(colData(se)), colnames(cd)), drop = FALSE]
+        qf <- replaceAssay(qf, se, i)
+    }
     qf
 }
 
@@ -118,6 +130,23 @@ formulas <- list(
 )
 formula_psm <- ~ Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | Run:Channel) + (1 | Run:ionID) + (1 | BioReplicate)
 
+## Refit tiers. A protein with one value per mouse cannot carry a mouse
+## effect; a protein seen in one mixture cannot carry a mixture effect.
+## Each tier drops the term that the failing proteins cannot support and
+## keeps the fixed effects unchanged.
+tiers <- list(
+    run_mixed = list(full = formulas$run_mixed,
+                     no_bioreplicate = ~ Diet * Duration + (1 | Mixture) + (1 | Run),
+                     mixture_only = ~ Diet * Duration + (1 | Mixture),
+                     no_random = ~ Diet * Duration),
+    mix_mixed = list(full = formulas$mix_mixed,
+                     no_random = ~ Diet * Duration),
+    naive = list(full = formulas$naive),
+    psm = list(full = formula_psm,
+               no_run_channel = ~ Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | Run:ionID) + (1 | BioReplicate),
+               no_run_channel_no_bioreplicate = ~ Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | Run:ionID))
+)
+
 models <- data.table(
     model = c("fraction_run_mixed", "fraction_run_naive", "mixture_mixed", "mixture_naive"),
     scope = c("fraction_run", "fraction_run", "mixture", "mixture"),
@@ -125,39 +154,38 @@ models <- data.table(
     formula = c("run_mixed", "naive", "mix_mixed", "naive")
 )
 
-all_res <- list(); model_log <- list()
+all_res <- list(); model_log <- list(); tier_logs <- list()
+record <- function(model_name, m_scope, m_structure, m_level, fit, formula, t0) {
+    res <- fit$results
+    res[, `:=`(model = model_name, scope = m_scope, structure = m_structure, level = m_level)]
+    all_res[[model_name]] <<- res
+    tl <- copy(fit$tier_log); tl[, model := model_name]
+    tier_logs[[model_name]] <<- tl
+    model_log[[model_name]] <<- data.table(
+        model = model_name, scope = m_scope, structure = m_structure, level = m_level,
+        formula = paste(deparse(formula), collapse = ""), n_proteins = fit$n_proteins,
+        n_fit_error = sum(res[contrast == labels[1], fit_type == "fitError"]),
+        n_refitted = sum(res[contrast == labels[1], !fit_tier %in% c("full", "fitError")]),
+        df_prior = round(fit$df_prior, 2), fit_seconds = round(fit$fit_seconds, 1),
+        seconds = round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1))
+    message(sprintf("   %s: %d proteins, %d refitted on a simpler tier, %d fit errors remain, %.0f s",
+                    model_name, fit$n_proteins, model_log[[model_name]]$n_refitted, model_log[[model_name]]$n_fit_error, model_log[[model_name]]$seconds))
+}
 for (k in seq_len(nrow(models))) {
     m <- models[k]
     qf <- if (m$scope == "fraction_run") qf_run else qf_mix
-    message("-- ", m$model, ": ", deparse(formulas[[m$formula]]))
+    message("-- ", m$model, ": ", paste(deparse(formulas[[m$formula]]), collapse = ""))
     t0 <- Sys.time()
-    fit <- quiet(fit_protein_level(qf, "proteins", formulas[[m$formula]], hyp, params, robust = TRUE, ridge = FALSE, contrast_labels = labels))
-    res <- fit$results
-    res[, `:=`(model = m$model, scope = m$scope, structure = m$structure, level = "protein")]
-    all_res[[m$model]] <- res
-    model_log[[m$model]] <- data.table(model = m$model, scope = m$scope, structure = m$structure, level = "protein",
-                                       formula = paste(deparse(formulas[[m$formula]]), collapse = ""),
-                                       n_proteins = fit$n_proteins,
-                                       n_fit_error = sum(res[contrast == labels[1], fit_type == "fitError"]),
-                                       fit_seconds = round(fit$fit_seconds, 1),
-                                       seconds = round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1))
-    message(sprintf("   %s: %d proteins, %d fit errors, %.0f s", m$model, fit$n_proteins, model_log[[m$model]]$n_fit_error, model_log[[m$model]]$seconds))
+    fit <- quiet(fit_tiered(qf, "proteins", tiers[[m$formula]], hyp, params, robust = TRUE, ridge = FALSE, contrast_labels = labels))
+    record(m$model, m$scope, m$structure, "protein", fit, formulas[[m$formula]], t0)
 }
 
 if (run_psm) {
     message("-- psm_mixed: ", paste(deparse(formula_psm), collapse = ""))
     t0 <- Sys.time()
-    fit <- quiet(fit_psm_level(qf_run, "ions_norm", formula_psm, "Protein.Accessions", hyp, params,
-                               robust = TRUE, ridge = FALSE, contrast_labels = labels))
-    res <- fit$results
-    res[, `:=`(model = "psm_mixed", scope = "fraction_run", structure = "mixed", level = "psm")]
-    all_res[["psm_mixed"]] <- res
-    model_log[["psm_mixed"]] <- data.table(model = "psm_mixed", scope = "fraction_run", structure = "mixed", level = "psm",
-                                           formula = paste(deparse(formula_psm), collapse = ""), n_proteins = fit$n_proteins,
-                                           n_fit_error = sum(res[contrast == labels[1], fit_type == "fitError"]),
-                                           fit_seconds = round(fit$fit_seconds, 1),
-                                           seconds = round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1))
-    message(sprintf("   psm_mixed: %d proteins, %d fit errors, %.0f s", fit$n_proteins, model_log[["psm_mixed"]]$n_fit_error, model_log[["psm_mixed"]]$seconds))
+    fit <- quiet(fit_tiered(qf_run, "ions_norm", tiers$psm, hyp, params, robust = TRUE, ridge = FALSE,
+                            psm_level = TRUE, fcol = "Protein.Accessions", contrast_labels = labels))
+    record("psm_mixed", "fraction_run", "mixed", "psm", fit, formula_psm, t0)
     mem_checkpoint(timer, "psm-level model done")
 }
 
@@ -166,6 +194,11 @@ mlog <- rbindlist(model_log)
 mlog[, reference := reference]
 fwrite(results, file.path(res_dir, "mouse_results.tsv.gz"), sep = "\t", compress = "gzip")
 write_tsv(mlog, file.path(res_dir, "mouse_models.tsv"))
+tiers_out <- rbindlist(tier_logs)
+tiers_out <- merge(tiers_out, results[contrast == labels[1], .N, by = .(model, tier = fit_tier)], by = c("model", "tier"), all.x = TRUE)
+setnames(tiers_out, "N", "proteins_with_result_from_tier")
+write_tsv(tiers_out, file.path(res_dir, "mouse_fit_tiers.tsv"))
+print(tiers_out)
 
 ## ---- Counts and comparisons ---------------------------------------------
 
@@ -220,6 +253,14 @@ if (run_psm) {
     diag <- rbind(diag, diag_psm, fill = TRUE)
 }
 write_tsv(diag, file.path(res_dir, "mouse_lmer_diagnostics.tsv"))
+## Why the full model fails, protein by protein, from lme4's own messages.
+err <- diag[status == "error"]
+err[, cause := fifelse(grepl("must have > 1 sampled level", messages), "a grouping factor with a single level (one mixture or one run)",
+              fifelse(grepl("number of levels of each grouping factor must be", messages), "a grouping factor with as many levels as observations (one value per mouse)",
+              fifelse(grepl("rank deficient|contrasts can be applied|0 \\(non-NA\\) cases|need at least", messages), "fixed effects not estimable (empty factorial cell or too few values)", "other")))]
+err_tab <- err[, .N, by = .(scope, level, cause)][order(scope, level, -N)]
+write_tsv(err_tab, file.path(res_dir, "mouse_lmer_error_causes.tsv"))
+print(err_tab)
 vc_cols <- grep("^var_|^sigma2$", names(diag), value = TRUE)
 diag_sum <- diag[, c(list(n_proteins = .N, n_error = sum(status == "error"),
                           n_convergence_warning = sum(status == "convergence_warning"),

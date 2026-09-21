@@ -70,6 +70,8 @@ psm_budget_s <- 60 * as.numeric(if (is.null(opt$`psm-budget-min`)) 120 else opt$
 
 res_dir <- file.path(root, "results")
 qf_dir <- file.path(root, "results", "qfeatures")
+ckpt_dir <- file.path(qf_dir, "benchmark_checkpoints")
+dir.create(ckpt_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## ---- Design and contrasts --------------------------------------------------
 
@@ -92,6 +94,11 @@ formulas <- list(
     naive    = ~ 0 + Condition
 )
 formula_psm <- ~ 0 + Condition + (1 | Run) + (1 | Mixture) + (1 | Run:Channel) + (1 | Run:ionID)
+## One-hit wonders (a single ion in every sample) cannot carry the
+## channel-within-run effect; they are refitted without it, as the
+## vignette does with msqrobRefit, and the tier is recorded.
+tiers_psm <- list(full = formula_psm,
+                  no_run_channel = ~ 0 + Condition + (1 | Run) + (1 | Mixture) + (1 | Run:ionID))
 
 ## Variant table. ms2 runs the subset needed by the compression stage.
 variants <- rbindlist(list(
@@ -186,6 +193,18 @@ for (a in acquisitions) for (dsg in names(designs)) {
     for (v in seq_len(nrow(vset))) {
         vr <- vset[v]
         message(sprintf("-- [%s/%s] variant %d/%d: %s", a, dsg, v, nrow(vset), vr$variant))
+        ## Checkpoint: a fitted variant is saved at once, so a crash or an
+        ## interruption costs one variant rather than the whole stage.
+        ckpt <- file.path(ckpt_dir, sprintf("%s_%s_%s.rds", a, dsg, vr$variant))
+        if (file.exists(ckpt) && !isTRUE(opt$force)) {
+            saved <- readRDS(ckpt)
+            all_results[[length(all_results) + 1L]] <- saved$res
+            all_metrics[[length(all_metrics) + 1L]] <- saved$met
+            variant_log[[length(variant_log) + 1L]] <- saved$vlog
+            if (!is.null(saved$subset_log)) { subset_log[[a]] <- saved$subset_log; psm_sub <- saved$psm_sub }
+            message("   restored from checkpoint")
+            next
+        }
         qf <- prepare(qf0, vr$reference)
         cd <- as.data.frame(colData(qf))
         params <- cond_params
@@ -212,13 +231,15 @@ for (a in acquisitions) for (dsg in names(designs)) {
             }
             keep <- rowData(qf[["ions_norm"]])$Protein.Accessions %in% psm_sub$proteins
             qf_s <- qf[keep, , "ions_norm"]
-            fit <- quiet(fit_psm_level(qf_s, "ions_norm", formula_psm, "Protein.Accessions", hyp, params,
-                                       robust = vr$robust, ridge = vr$ridge, contrast_labels = labels))
-            extra <- sprintf("%d proteins in subset", length(psm_sub$proteins))
+            fit <- quiet(fit_tiered(qf_s, "ions_norm", tiers_psm, hyp, params, robust = vr$robust, ridge = vr$ridge,
+                                    psm_level = TRUE, fcol = "Protein.Accessions", contrast_labels = labels))
+            extra <- sprintf("%d proteins in subset; %d refitted without Run:Channel", length(psm_sub$proteins),
+                             fit$tier_log[tier == "no_run_channel", fitted])
             rm(qf_s)
         }
         elapsed <- as.numeric(difftime(Sys.time(), t_start, units = "secs"))
         res <- fit$results
+        if (!"fit_tier" %in% names(res)) res[, fit_tier := fifelse(fit_type == "fitError", "fitError", "full")]
         res[, `:=`(acquisition = a, design = dsg, variant = vr$variant, level = vr$level, reference = vr$reference,
                    structure = vr$structure, robust = vr$robust, ridge = vr$ridge, engine = vr$engine)]
         all_results[[length(all_results) + 1L]] <- res
@@ -235,27 +256,41 @@ for (a in acquisitions) for (dsg in names(designs)) {
         m5 <- met[alpha == 0.05]
         message(sprintf("   %.0f s; fit errors %d; FDP at 5%%: %s", elapsed, variant_log[[length(variant_log)]]$n_fit_error,
                         paste(sprintf("%s=%.3f", m5$contrast, m5$fdp), collapse = " ")))
+        saveRDS(list(res = res, met = met, vlog = variant_log[[length(variant_log)]],
+                     subset_log = if (vr$level == "psm") subset_log[[a]] else NULL,
+                     psm_sub = if (vr$level == "psm") psm_sub else NULL), ckpt)
         rm(qf, fit, res); invisible(gc())
     }
 
     ## Singular fit and variance component diagnostics for the adopted
     ## structures, from a plain lme4 pass (see msqrob_helpers.R).
+    run_diag <- function(label, expr_fun) {
+        ck <- file.path(ckpt_dir, sprintf("diag_%s_%s_%s.rds", a, dsg, label))
+        if (file.exists(ck) && !isTRUE(opt$force)) { message("   diagnostics ", label, " restored from checkpoint"); return(readRDS(ck)) }
+        d <- expr_fun(); saveRDS(d, ck); d
+    }
     message("-- [", a, "/", dsg, "] lme4 diagnostics, protein level, reference dropped")
-    qf <- prepare(qf0, "drop")
-    d <- quiet(lmer_diagnostics(qf, "proteins", formulas$mixed))
-    d[, `:=`(acquisition = a, design = dsg, level = "protein", reference = "drop", structure = "mixed")]
+    d <- run_diag("protein_drop", function() {
+        qf <- prepare(qf0, "drop")
+        d <- quiet(lmer_diagnostics(qf, "proteins", formulas$mixed))
+        d[, `:=`(acquisition = a, design = dsg, level = "protein", reference = "drop", structure = "mixed")]
+    })
     diag_out[[length(diag_out) + 1L]] <- d
     if (a == "ms3" && dsg == "balanced") {
-        qf <- prepare(qf0, "ratio")
-        d <- quiet(lmer_diagnostics(qf, "proteins", formulas$mixed))
-        d[, `:=`(acquisition = a, design = dsg, level = "protein", reference = "ratio", structure = "mixed")]
+        d <- run_diag("protein_ratio", function() {
+            qf <- prepare(qf0, "ratio")
+            d <- quiet(lmer_diagnostics(qf, "proteins", formulas$mixed))
+            d[, `:=`(acquisition = a, design = dsg, level = "protein", reference = "ratio", structure = "mixed")]
+        })
         diag_out[[length(diag_out) + 1L]] <- d
         if (!is.null(psm_sub)) {
             message("-- [", a, "] lme4 diagnostics, PSM level subset, reference dropped")
-            qf <- prepare(qf0, "drop")
-            keep <- rowData(qf[["ions_norm"]])$Protein.Accessions %in% psm_sub$proteins
-            d <- quiet(lmer_diagnostics(qf[keep, , "ions_norm"], "ions_norm", formula_psm, psm_level = TRUE))
-            d[, `:=`(acquisition = a, design = dsg, level = "psm", reference = "drop", structure = "mixed")]
+            d <- run_diag("psm_drop", function() {
+                qf <- prepare(qf0, "drop")
+                keep <- rowData(qf[["ions_norm"]])$Protein.Accessions %in% psm_sub$proteins
+                d <- quiet(lmer_diagnostics(qf[keep, , "ions_norm"], "ions_norm", formula_psm, psm_level = TRUE))
+                d[, `:=`(acquisition = a, design = dsg, level = "psm", reference = "drop", structure = "mixed")]
+            })
             diag_out[[length(diag_out) + 1L]] <- d
         }
     }
