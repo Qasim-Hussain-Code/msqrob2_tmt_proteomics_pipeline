@@ -1,0 +1,10 @@
+stage	elapsed_s	peak_rss_mb	note
+01_install	9	NA	Rscript=/c/Users/User/Documents/files/msqrob2_tmt_proteomics_pipeline/scripts/lib/rscript.sh
+02_download_data	243	NA	datasets=spikein1,mouse
+03_build_qfeatures	17.1	1244	datasets: spikein1,spikein1_ms2,mouse
+04_preprocess	371.7	1582	datasets: spikein1,spikein1_ms2,mouse
+05_benchmark_workflows	9175.3	4570	acquisitions=ms3,ms2; 27 variants
+06_compression	9.8	1301	slopes: SPS-MS3=0.536, MS2=0.272
+07_mouse_inference	1063.4	2229	reference=drop; psm_level=TRUE
+08_figures	5.3	1144	
+09_report	13	NA	quarto 1.9.36

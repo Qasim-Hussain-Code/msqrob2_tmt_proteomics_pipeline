@@ -1,0 +1,2 @@
+check	contrast	model	n_pathway_uniprot	n_tested	n_pathway_tested	n_pathway_sig_10	n_other_sig_10	odds_ratio_10	fisher_p_10	n_pathway_sig_5	odds_ratio_5	fisher_p_5	n_pathway_negative_logfc	median_logfc_pathway	median_logfc_others	wilcoxon_p_logfc	kegg_fetched
+KEGG mmu00280 enrichment, background = tested proteins	HF_vs_LF_8wk	fraction_run_mixed	71	3944	41	19	219	14.4979028036932	2.50168215838695e-13	14	15.3809973502245	4.50580643894147e-11	33	-0.374499667687758	0.042074300638474	2.50066172213792e-07	2026-09-22

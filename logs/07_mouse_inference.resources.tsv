@@ -1,0 +1,2 @@
+stage	elapsed_s	peak_rss_mb	note	finished
+07_mouse_inference	1063.4	2229	reference=drop; psm_level=TRUE	2026-09-22T03:35:03+0800

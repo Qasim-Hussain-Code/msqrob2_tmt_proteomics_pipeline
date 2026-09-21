@@ -1,3 +1,3 @@
-scope	n_proteins	n_columns	psms_used
-fraction_run	4683	270	39721
-mixture	4683	30	68941
+scope	n_proteins	n_columns	psms_summarised	distinct_ions	note
+fraction_run	4683	270	75997	39721	one PSM per ion per fraction-run; ions recur across fractions and mixtures
+mixture	4683	30	68941	39721	one PSM per ion per mixture, the highest summed intensity across fractions

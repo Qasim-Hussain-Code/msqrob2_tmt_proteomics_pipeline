@@ -1,0 +1,42 @@
+protein	gene	description	logFC	pval	adjPval
+P47738	Aldh2	Aldehyde dehydrogenase, mitochondrial OS=Mus musculus GN=Aldh2 PE=1 SV=1	-0.997140100564724	1.33020051848972e-06	0.000374736488923103
+O08749	Dld	Dihydrolipoyl dehydrogenase, mitochondrial OS=Mus musculus GN=Dld PE=1 SV=2	-0.533813980571932	2.72165929208444e-06	0.000715614949865401
+Q9EQ20	Aldh6a1	Methylmalonate-semialdehyde dehydrogenase [acylating], mitochondrial OS=Mus musculus GN=Aldh6a1 PE=1 SV=1	-0.8696042714075	5.24526149156365e-06	0.00103436556613635
+Q9JHI5	Ivd	Isovaleryl-CoA dehydrogenase, mitochondrial OS=Mus musculus GN=Ivd PE=1 SV=1	-1.08180934636449	1.08277560469261e-05	0.00178085422410623
+Q8QZS1	Hibch	3-hydroxyisobutyryl-CoA hydrolase, mitochondrial OS=Mus musculus GN=Hibch PE=1 SV=1	-0.480514807621937	1.56337624280123e-05	0.00218327723354093
+Q9DBL1	Acadsb	Short/branched chain specific acyl-CoA dehydrogenase, mitochondrial OS=Mus musculus GN=Acadsb PE=1 SV=1	-0.603971365643018	1.6607078348435e-05	0.00218327723354093
+Q9D2R0	Aacs	Acetoacetyl-CoA synthetase OS=Mus musculus GN=Aacs PE=1 SV=1	-1.15725360526909	3.53438017270595e-05	0.00348489885028806
+P53395	Dbt	Lipoamide acyltransferase component of branched-chain alpha-keto acid dehydrogenase complex, mitochondrial OS=Mus musculus GN=Dbt PE=1 SV=2	-0.660694491877049	4.95409289814729e-05	0.00444066872506657
+Q8CAY6	Acat2	Acetyl-CoA acetyltransferase, cytosolic OS=Mus musculus GN=Acat2 PE=1 SV=2	-0.432221058198493	0.000160897786247749	0.0113318012314486
+O35855	Bcat2	Branched-chain-amino-acid aminotransferase, mitochondrial OS=Mus musculus GN=Bcat2 PE=1 SV=2	-0.897633932071976	0.000290318845220813	0.0176156542392444
+P61922	Abat	4-aminobutyrate aminotransferase, mitochondrial OS=Mus musculus GN=Abat PE=1 SV=1	0.684239076130465	0.000286838436616032	0.0176156542392444
+Q8BH95	Echs1	Enoyl-CoA hydratase, mitochondrial OS=Mus musculus GN=Echs1 PE=1 SV=1	-0.720197449728353	0.00057787686951454	0.0247689459304807
+Q99MR8	Mccc1	Methylcrotonoyl-CoA carboxylase subunit alpha, mitochondrial OS=Mus musculus GN=Mccc1 PE=1 SV=2	-0.655527728404419	0.000662498092992222	0.0269370358635188
+Q3ULD5	Mccc2	Methylcrotonoyl-CoA carboxylase beta chain, mitochondrial OS=Mus musculus GN=Mccc2 PE=1 SV=1	-0.679468144825183	0.000809618276764741	0.0297977333756877
+Q99MN9	Pccb	Propionyl-CoA carboxylase beta chain, mitochondrial OS=Mus musculus GN=Pccb PE=1 SV=2	-0.418871197859397	0.00314394915284376	0.069272265133049
+Q99L13	Hibadh	3-hydroxyisobutyrate dehydrogenase, mitochondrial OS=Mus musculus GN=Hibadh PE=1 SV=1	-0.461576008250772	0.00347018094044229	0.0743825740712196
+P24288	Bcat1	Branched-chain-amino-acid aminotransferase, cytosolic OS=Mus musculus GN=Bcat1 PE=1 SV=2	1.91283056374048	0.00543729224136029	0.0940556166663376
+Q61425	Hadh	Hydroxyacyl-coenzyme A dehydrogenase, mitochondrial OS=Mus musculus GN=Hadh PE=1 SV=2	-0.301075403395573	0.00547506137958643	0.0942953802667636
+Q8JZK9	Hmgcs1	Hydroxymethylglutaryl-CoA synthase, cytoplasmic OS=Mus musculus GN=Hmgcs1 PE=1 SV=1	0.756880751094334	0.00574478558496373	0.0963332066102456
+P16332	Mut	Methylmalonyl-CoA mutase, mitochondrial OS=Mus musculus GN=Mut PE=1 SV=2	-0.395051113874278	0.00730685544069029	0.112133221237675
+P38060	Hmgcl	Hydroxymethylglutaryl-CoA lyase, mitochondrial OS=Mus musculus GN=Hmgcl PE=1 SV=2	-0.542812084831147	0.00818439819062812	0.1213506258039
+Q3URE1	Acsf3	Acyl-CoA synthetase family member 3, mitochondrial OS=Mus musculus GN=Acsf3 PE=1 SV=2	-0.259915521086326	0.0199742111113463	0.208435076334938
+Q9D7B6	Acad8	Isobutyryl-CoA dehydrogenase, mitochondrial OS=Mus musculus GN=Acad8 PE=1 SV=2	-0.374499667687758	0.0213162965964869	0.214440482170264
+Q91ZA3	Pcca	Propionyl-CoA carboxylase alpha chain, mitochondrial OS=Mus musculus GN=Pcca PE=1 SV=2	-0.346200867283476	0.0770866036063143	0.38146745874944
+Q8QZT1	Acat1	Acetyl-CoA acetyltransferase, mitochondrial OS=Mus musculus GN=Acat1 PE=1 SV=1	-0.212990032254427	0.127198921309988	0.478334499377198
+G3X982	Aox3	Aldehyde oxidase 3 OS=Mus musculus GN=Aox3 PE=1 SV=1	-0.512629957012402	0.13184234576468	0.485968422145699
+Q9DBF1	Aldh7a1	Alpha-aminoadipic semialdehyde dehydrogenase OS=Mus musculus GN=Aldh7a1 PE=1 SV=4	-0.139274731204103	0.140135944822966	0.499912446568601
+Q9DBM2	Ehhadh	Peroxisomal bifunctional enzyme OS=Mus musculus GN=Ehhadh PE=1 SV=4	-0.145645054356026	0.152454069708468	0.522389933479594
+Q8VCH0	Acaa1b	3-ketoacyl-CoA thiolase B, peroxisomal OS=Mus musculus GN=Acaa1b PE=1 SV=1	0.515946480507902	0.177316138729097	0.553845987198552
+P47740	Aldh3a2	Fatty aldehyde dehydrogenase OS=Mus musculus GN=Aldh3a2 PE=1 SV=2	-0.446426485952546	0.225696112699279	0.615166184164448
+P45952	Acadm	Medium-chain specific acyl-CoA dehydrogenase, mitochondrial OS=Mus musculus GN=Acadm PE=1 SV=1	-0.240517234125009	0.245895733021748	0.632624116789154
+Q9D0K2	Oxct1	Succinyl-CoA:3-ketoacid coenzyme A transferase 1, mitochondrial OS=Mus musculus GN=Oxct1 PE=1 SV=1	0.135737078424318	0.367130155353478	0.741024223497501
+Q07417	Acads	Short-chain specific acyl-CoA dehydrogenase, mitochondrial OS=Mus musculus GN=Acads PE=1 SV=2	-0.162973009637075	0.406601102221652	0.768392308175465
+Q9CZS1	Aldh1b1	Aldehyde dehydrogenase X, mitochondrial OS=Mus musculus GN=Aldh1b1 PE=1 SV=1	-0.385768771550808	0.489436858519433	0.824422004867938
+Q9D1I5	Mcee	Methylmalonyl-CoA epimerase, mitochondrial OS=Mus musculus GN=Mcee PE=1 SV=1	-0.137557436940751	0.521031282505379	0.839096520294494
+Q8BMS1	Hadha	Trifunctional enzyme subunit alpha, mitochondrial OS=Mus musculus GN=Hadha PE=1 SV=1	-0.0957144776574359	0.563940858105212	0.856813228135519
+P54869	Hmgcs2	Hydroxymethylglutaryl-CoA synthase, mitochondrial OS=Mus musculus GN=Hmgcs2 PE=1 SV=2	-0.173679335673024	0.565167437016385	0.857005593552669
+Q99JY0	Hadhb	Trifunctional enzyme subunit beta, mitochondrial OS=Mus musculus GN=Hadhb PE=1 SV=1	0.0545980016412268	0.651294036882132	0.897520503655879
+Q921H8	Acaa1a	3-ketoacyl-CoA thiolase A, peroxisomal OS=Mus musculus GN=Acaa1a PE=1 SV=1	-0.0457785024115284	0.671438837407733	0.904115662251997
+O54754	Aox1	Aldehyde oxidase 1 OS=Mus musculus GN=Aox1 PE=1 SV=2	0.103959972555712	0.70292372602297	0.915087496887401
+Q8BWT1	Acaa2	3-ketoacyl-CoA thiolase, mitochondrial OS=Mus musculus GN=Acaa2 PE=1 SV=3	0.0325132264558274	0.811099179470058	0.946722451562565

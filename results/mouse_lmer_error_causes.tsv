@@ -1,0 +1,9 @@
+scope	level	cause	N
+fraction_run	protein	a grouping factor with a single level (one mixture or one run)	1170
+fraction_run	protein	a grouping factor with as many levels as observations (one value per mouse)	640
+fraction_run	protein	fixed effects not estimable (empty factorial cell or too few values)	10
+fraction_run	psm	a grouping factor with as many levels as observations (one value per mouse)	100
+fraction_run	psm	a grouping factor with a single level (one mixture or one run)	94
+mixture	protein	a grouping factor with a single level (one mixture or one run)	1170
+mixture	protein	fixed effects not estimable (empty factorial cell or too few values)	18
+mixture	protein	other	2

@@ -1,0 +1,6 @@
+model	scope	structure	level	formula	n_proteins	n_fit_error	n_refitted	df_prior	fit_seconds	seconds	reference
+fraction_run_mixed	fraction_run	mixed	protein	~Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | BioReplicate)	4683	724	1099	4.18	253.8	257.6	drop
+fraction_run_naive	fraction_run	naive	protein	~Diet * Duration	4683	734	0	5.32	3.2	5.8	drop
+mixture_mixed	mixture	mixed	protein	~Diet * Duration + (1 | Mixture)	4683	808	401	3.91	139.3	143	drop
+mixture_naive	mixture	naive	protein	~Diet * Duration	4683	820	0	3.13	2.9	4.9	drop
+psm_mixed	fraction_run	mixed	psm	~Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | Run:Channel) +     (1 | Run:ionID) + (1 | BioReplicate)	4683	1011	1294	6.86	519.3	523.9	drop

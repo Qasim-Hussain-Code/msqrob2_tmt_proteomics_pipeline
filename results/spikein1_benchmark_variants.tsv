@@ -1,0 +1,28 @@
+acquisition	design	variant	level	reference	structure	robust	ridge	engine	n_proteins	n_fit_error	fit_seconds	variant_seconds	n_channels	note	peak_rss_mb
+ms3	balanced	protein_drop_mixed_robust_noridge_msqrob2	protein	drop	mixed	TRUE	FALSE	msqrob2	4298	63	173	178.4	120		1195
+ms3	balanced	protein_drop_naive_robust_noridge_msqrob2	protein	drop	naive	TRUE	FALSE	msqrob2	4298	10	2.7	5.5	120		1214
+ms3	balanced	protein_drop_mixed_ls_noridge_msqrob2	protein	drop	mixed	FALSE	FALSE	msqrob2	4298	63	146.1	151.4	120		1221
+ms3	balanced	protein_drop_naive_ls_noridge_msqrob2	protein	drop	naive	FALSE	FALSE	msqrob2	4298	5	1	3.5	120		1243
+ms3	balanced	protein_keep_mixed_robust_noridge_msqrob2	protein	keep	mixed	TRUE	FALSE	msqrob2	4298	63	190.5	196.7	150		1243
+ms3	balanced	protein_keep_naive_robust_noridge_msqrob2	protein	keep	naive	TRUE	FALSE	msqrob2	4298	10	3.7	7.4	150		1284
+ms3	balanced	protein_keep_mixed_ls_noridge_msqrob2	protein	keep	mixed	FALSE	FALSE	msqrob2	4298	63	163.8	169.8	150		1284
+ms3	balanced	protein_keep_naive_ls_noridge_msqrob2	protein	keep	naive	FALSE	FALSE	msqrob2	4298	5	1.1	4.2	150		1284
+ms3	balanced	protein_ratio_mixed_robust_noridge_msqrob2	protein	ratio	mixed	TRUE	FALSE	msqrob2	4298	67	189.9	196	120		1303
+ms3	balanced	protein_ratio_naive_robust_noridge_msqrob2	protein	ratio	naive	TRUE	FALSE	msqrob2	4298	11	3.1	6.2	120		1345
+ms3	balanced	protein_ratio_mixed_ls_noridge_msqrob2	protein	ratio	mixed	FALSE	FALSE	msqrob2	4298	67	155.6	161.7	120		1345
+ms3	balanced	protein_ratio_naive_ls_noridge_msqrob2	protein	ratio	naive	FALSE	FALSE	msqrob2	4298	6	1.3	4.7	120		1345
+ms3	balanced	protein_drop_run_only_robust_noridge_msqrob2	protein	drop	run_only	TRUE	FALSE	msqrob2	4298	29	157.3	165.4	120		1345
+ms3	balanced	protein_drop_mixed_robust_ridge_msqrob2	protein	drop	mixed	TRUE	TRUE	msqrob2	4298	63	237.2	240.6	120		1345
+ms3	balanced	protein_drop_dupcor_mixture_ls_noridge_limma	protein	drop	dupcor_mixture	FALSE	FALSE	limma	4298	0	4.9	4.9	120	consensus correlation 0.362	1452
+ms3	balanced	protein_keep_dupcor_mixture_ls_noridge_limma	protein	keep	dupcor_mixture	FALSE	FALSE	limma	4298	0	7	7.1	150	consensus correlation 0.368	1452
+ms3	balanced	protein_ratio_dupcor_mixture_ls_noridge_limma	protein	ratio	dupcor_mixture	FALSE	FALSE	limma	4298	0	4.5	4.6	120	consensus correlation 0.098	1477
+ms3	balanced	psm_drop_mixed_robust_noridge_msqrob2	psm	drop	mixed	TRUE	FALSE	msqrob2	4298	63	1503.8	1517.9	120	4298 proteins in subset; 1018 refitted without Run:Channel	3899
+ms3	balanced	psm_keep_mixed_robust_noridge_msqrob2	psm	keep	mixed	TRUE	FALSE	msqrob2	4298	63	2198.8	2209.1	150	4298 proteins in subset; 1018 refitted without Run:Channel	4355
+ms3	balanced	psm_drop_mixed_ls_noridge_msqrob2	psm	drop	mixed	FALSE	FALSE	msqrob2	4298	63	1466.5	1475.9	120	4298 proteins in subset; 1018 refitted without Run:Channel	4355
+ms3	balanced	psm_drop_mixed_robust_ridge_msqrob2	psm	drop	mixed	TRUE	TRUE	msqrob2	4298	63	1599.3	1605.4	120	4298 proteins in subset; 1018 refitted without Run:Channel	4570
+ms3	unbalanced	protein_drop_mixed_robust_noridge_msqrob2	protein	drop	mixed	TRUE	FALSE	msqrob2	4298	64	160.1	165.3	72		4570
+ms3	unbalanced	protein_drop_naive_robust_noridge_msqrob2	protein	drop	naive	TRUE	FALSE	msqrob2	4298	15	2.5	5.1	72		4570
+ms3	unbalanced	protein_drop_dupcor_mixture_ls_noridge_limma	protein	drop	dupcor_mixture	FALSE	FALSE	limma	4298	0	3.8	3.8	72	consensus correlation 0.335	4570
+ms2	balanced	protein_drop_mixed_robust_noridge_msqrob2	protein	drop	mixed	TRUE	FALSE	msqrob2	4881	44	188.8	195.4	120		4570
+ms2	balanced	protein_drop_naive_robust_noridge_msqrob2	protein	drop	naive	TRUE	FALSE	msqrob2	4881	0	3	5.9	120		4570
+ms2	balanced	protein_drop_dupcor_mixture_ls_noridge_limma	protein	drop	dupcor_mixture	FALSE	FALSE	limma	4881	0	4.4	4.4	120	consensus correlation 0.382	4570

@@ -1,0 +1,4 @@
+stage	checkpoint	heap_mb	peak_rss_mb	elapsed_s
+07_mouse_inference	psm-level model done	653	2154	1312.3
+07_mouse_inference	psm-level model done	653	2228	1338
+07_mouse_inference	psm-level model done	653	2229	940.4

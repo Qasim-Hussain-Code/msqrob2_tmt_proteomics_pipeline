@@ -1,0 +1,5 @@
+contrast	n_both_tested	sig_fraction_run	sig_mixture	sig_both	logfc_correlation	median_se_ratio_mixture_over_fraction
+HF_vs_LF_18wk	3684	112	19	17	0.948624701368724	1.01893030040657
+HF_vs_LF_8wk	3838	141	54	54	0.967471987598546	1.01889973160404
+HF_vs_LF_average	3684	251	139	110	0.958339317965747	1.01792674395595
+interaction	3684	40	6	6	0.949866600505903	1.01769045515532

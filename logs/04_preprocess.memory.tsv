@@ -1,0 +1,149 @@
+stage	checkpoint	heap_mb	peak_rss_mb	elapsed_s
+04_preprocess	spikein1 loaded and slimmed	571	987	4.8
+04_preprocess	duplicated reporter rows (two search nodes)	615	1181	9.9
+04_preprocess	ambiguous UPS status	617	1223	12.5
+04_preprocess	failed protein inference	617	1223	13.5
+04_preprocess	shared peptides (protein groups)	608	1223	14.4
+04_preprocess	PSMs rejected by PD consensus	608	1223	15.2
+04_preprocess	lower-ranked matches to a spectrum	608	1223	16.1
+04_preprocess	decoys	608	1223	16.7
+04_preprocess	contaminants	608	1223	17.3
+04_preprocess	ions mapped to different proteins across runs	622	1223	19.8
+04_preprocess	proteins seen in a single run	622	1223	20.7
+04_preprocess	zeroIsNA	624	1223	22.9
+04_preprocess	repeat spectra of the same ion in a run	622	1254	44.6
+04_preprocess	PSMs with too many missing channels	620	1254	45.9
+04_preprocess	spikein1 filters done	620	1254	46.8
+04_preprocess	spikein1 normalised, density figure	682	1366	53.4
+04_preprocess	spikein1 summarised	702	1409	137.8
+04_preprocess	spikein1 joined	761	1409	148.3
+04_preprocess	spikein1 example figure	766	1409	149.8
+04_preprocess	spikein1 saved	773	1409	153
+04_preprocess	spikein1_ms2 loaded and slimmed	851	1409	157.7
+04_preprocess	duplicated reporter rows (two search nodes)	895	1555	164.1
+04_preprocess	ambiguous UPS status	898	1555	167.2
+04_preprocess	failed protein inference	898	1555	168.2
+04_preprocess	shared peptides (protein groups)	889	1555	169.2
+04_preprocess	PSMs rejected by PD consensus	889	1555	170.4
+04_preprocess	lower-ranked matches to a spectrum	889	1555	171.5
+04_preprocess	decoys	889	1555	172.5
+04_preprocess	contaminants	889	1555	173.3
+04_preprocess	ions mapped to different proteins across runs	903	1555	176.3
+04_preprocess	proteins seen in a single run	903	1555	177.5
+04_preprocess	zeroIsNA	906	1557	180.3
+04_preprocess	repeat spectra of the same ion in a run	901	1557	208.4
+04_preprocess	PSMs with too many missing channels	900	1557	209.4
+04_preprocess	spikein1_ms2 filters done	900	1557	210.3
+04_preprocess	spikein1_ms2 normalised, density figure	734	1682	217.3
+04_preprocess	spikein1_ms2 summarised	755	1682	335.7
+04_preprocess	spikein1_ms2 joined	828	1789	346.7
+04_preprocess	spikein1_ms2 example figure	832	1789	348.1
+04_preprocess	spikein1_ms2 saved	839	1789	352
+04_preprocess	mouse loaded and slimmed	863	1789	355.2
+04_preprocess	failed protein inference	880	1789	357.9
+04_preprocess	shared peptides (protein groups)	877	1789	359
+04_preprocess	PSMs rejected by PD consensus	877	1789	360.1
+04_preprocess	lower-ranked matches to a spectrum	877	1789	361.3
+04_preprocess	decoys	877	1789	362.2
+04_preprocess	contaminants	877	1789	363.1
+04_preprocess	ions mapped to different proteins across runs	882	1789	366
+04_preprocess	zeroIsNA	883	1789	368.2
+04_preprocess	repeat spectra of the same ion in a run	880	1789	378.6
+04_preprocess	PSMs with too many missing channels	876	1789	379.7
+04_preprocess	mouse filters done	876	1789	380.6
+04_preprocess	mouse normalised, density figure	574	1789	385.4
+04_preprocess	mouse summarised	584	1789	417.7
+04_preprocess	mouse joined	679	1789	427
+04_preprocess	mouse example figure	682	1789	428.3
+04_preprocess	mouse saved	691	1789	430.9
+04_preprocess	mouse loaded and slimmed	521	968	3.3
+04_preprocess	failed protein inference	540	1031	5.5
+04_preprocess	shared peptides (protein groups)	537	1031	6.4
+04_preprocess	PSMs rejected by PD consensus	537	1031	7.2
+04_preprocess	lower-ranked matches to a spectrum	537	1031	8
+04_preprocess	decoys	537	1031	8.9
+04_preprocess	contaminants	537	1031	9.5
+04_preprocess	ions mapped to different proteins across runs	544	1049	11.8
+04_preprocess	zeroIsNA	545	1063	13.6
+04_preprocess	repeat spectra of the same ion in a run	542	1135	21.3
+04_preprocess	PSMs with too many missing channels	538	1135	22.2
+04_preprocess	mouse filters done	538	1135	22.9
+04_preprocess	mouse normalised, density figure	563	1181	26.8
+04_preprocess	mouse summarised	574	1181	54.2
+04_preprocess	mouse joined	672	1346	62.7
+04_preprocess	mouse example figure	677	1346	64.2
+04_preprocess	mouse saved	686	1346	66.5
+04_preprocess	mouse loaded and slimmed	521	938	3.2
+04_preprocess	failed protein inference	540	1030	5.5
+04_preprocess	shared peptides (protein groups)	537	1030	6.5
+04_preprocess	PSMs rejected by PD consensus	537	1030	7.4
+04_preprocess	lower-ranked matches to a spectrum	537	1030	8.2
+04_preprocess	decoys	537	1030	8.9
+04_preprocess	contaminants	537	1030	9.6
+04_preprocess	ions mapped to different proteins across runs	544	1047	11.8
+04_preprocess	zeroIsNA	545	1063	13.6
+04_preprocess	repeat spectra of the same ion in a run	542	1134	21.6
+04_preprocess	PSMs with too many missing channels	538	1134	22.7
+04_preprocess	mouse filters done	538	1134	23.4
+04_preprocess	mouse normalised, density figure	563	1144	27.6
+04_preprocess	mouse summarised	574	1194	56.6
+04_preprocess	mouse joined	672	1331	65.7
+04_preprocess	mouse example figure	677	1331	67.2
+04_preprocess	mouse saved	677	1331	69.2
+04_preprocess	spikein1 loaded and slimmed	571	986	4.6
+04_preprocess	duplicated reporter rows (two search nodes)	614	1181	9.5
+04_preprocess	ambiguous UPS status	617	1224	11.9
+04_preprocess	failed protein inference	617	1224	12.7
+04_preprocess	shared peptides (protein groups)	608	1224	13.6
+04_preprocess	PSMs rejected by PD consensus	608	1224	14.4
+04_preprocess	lower-ranked matches to a spectrum	608	1224	15.2
+04_preprocess	decoys	608	1224	15.9
+04_preprocess	contaminants	608	1224	16.6
+04_preprocess	ions mapped to different proteins across runs	622	1224	19.1
+04_preprocess	proteins seen in a single run	622	1224	20
+04_preprocess	zeroIsNA	624	1224	22.3
+04_preprocess	repeat spectra of the same ion in a run	621	1254	40.5
+04_preprocess	PSMs with too many missing channels	620	1254	41.5
+04_preprocess	spikein1 filters done	620	1254	42.2
+04_preprocess	spikein1 normalised, density figure	682	1367	48.1
+04_preprocess	spikein1 summarised	702	1443	120.4
+04_preprocess	spikein1 joined	761	1443	129
+04_preprocess	spikein1 example figure	766	1443	130.4
+04_preprocess	spikein1 saved	773	1443	133.1
+04_preprocess	spikein1_ms2 loaded and slimmed	626	1443	136.9
+04_preprocess	duplicated reporter rows (two search nodes)	676	1443	141.9
+04_preprocess	ambiguous UPS status	679	1443	144.5
+04_preprocess	failed protein inference	679	1443	145.4
+04_preprocess	shared peptides (protein groups)	668	1443	146.4
+04_preprocess	PSMs rejected by PD consensus	668	1443	147.4
+04_preprocess	lower-ranked matches to a spectrum	668	1443	148.3
+04_preprocess	decoys	668	1443	149.1
+04_preprocess	contaminants	668	1443	149.9
+04_preprocess	ions mapped to different proteins across runs	682	1443	152.5
+04_preprocess	proteins seen in a single run	682	1443	153.3
+04_preprocess	zeroIsNA	684	1443	155.6
+04_preprocess	repeat spectra of the same ion in a run	679	1443	176.9
+04_preprocess	PSMs with too many missing channels	679	1443	177.9
+04_preprocess	spikein1_ms2 filters done	679	1443	178.7
+04_preprocess	spikein1_ms2 normalised, density figure	730	1508	184.8
+04_preprocess	spikein1_ms2 summarised	751	1516	271.1
+04_preprocess	spikein1_ms2 joined	828	1516	281
+04_preprocess	spikein1_ms2 example figure	832	1516	282.2
+04_preprocess	spikein1_ms2 saved	839	1516	285.4
+04_preprocess	mouse loaded and slimmed	562	1516	288
+04_preprocess	failed protein inference	578	1516	290.1
+04_preprocess	shared peptides (protein groups)	576	1516	291.1
+04_preprocess	PSMs rejected by PD consensus	576	1516	291.9
+04_preprocess	lower-ranked matches to a spectrum	576	1516	292.8
+04_preprocess	decoys	576	1516	293.6
+04_preprocess	contaminants	576	1516	294.4
+04_preprocess	ions mapped to different proteins across runs	580	1516	296.7
+04_preprocess	zeroIsNA	581	1516	298.4
+04_preprocess	repeat spectra of the same ion in a run	578	1516	306
+04_preprocess	PSMs with too many missing channels	574	1516	306.9
+04_preprocess	mouse filters done	574	1516	307.6
+04_preprocess	mouse normalised, density figure	574	1516	311.4
+04_preprocess	mouse summarised	584	1516	336.7
+04_preprocess	mouse joined	680	1582	343.8
+04_preprocess	mouse example figure	682	1582	344.9
+04_preprocess	mouse saved	682	1582	346.8

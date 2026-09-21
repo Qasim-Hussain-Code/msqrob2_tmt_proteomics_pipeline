@@ -1,0 +1,3 @@
+dataset	acquisition	source	proteomexchange	raw_file_date	evidence
+spikein1	SPS-MS3	zenodo:14767905 spikein1_psms.txt (from MassIVE RMSV000000265, reanalysis of MSV000084264)	PXD015258	161117	MassIVE MSV000084264 title: TMT10 controlled mixtures - SILAC HeLa UPS1, acquired using SPS-MS3; Huang et al. 2020 methods: SpikeIn-5mix-MS3 acquired using SPS
+spikein1_ms2	MS2	massive:MSV000084266 quant/..._PD22_MS2_Intensity_01-(1)_PSMs.txt	PXD015261	161122	MassIVE MSV000084266 title: TMT10 controlled mixtures - SILAC HeLa UPS1, acquired using MS2-only strategy; export filename contains MS2

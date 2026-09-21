@@ -1,0 +1,4 @@
+stage	checkpoint	heap_mb	peak_rss_mb	elapsed_s
+05_benchmark_workflows	acquisition ms3 design balanced done	627	4570	8651.5
+05_benchmark_workflows	acquisition ms3 design unbalanced done	638	4570	8889.4
+05_benchmark_workflows	acquisition ms2 design balanced done	655	4570	9172.1

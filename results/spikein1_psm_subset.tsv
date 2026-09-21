@@ -1,0 +1,2 @@
+acquisition	n_proteins_total	n_proteins_fitted	n_ups	pilot_seconds_per_protein	projected_full_scale_min	budget_min	note
+ms3	4298	4298	40	0.115790569782257	37.3250901693106	120	pilot 0.12 s per protein; all 4298 proteins fit the 120 min budget

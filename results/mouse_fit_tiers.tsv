@@ -1,0 +1,19 @@
+model	tier	attempted	fitted	formula	proteins_with_result_from_tier
+fraction_run_mixed	absent_factor_level	150	0	NA	NA
+fraction_run_mixed	full	4683	2860	~Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | BioReplicate)	2860
+fraction_run_mixed	mixture_only	1059	0	~Diet * Duration + (1 | Mixture)	NA
+fraction_run_mixed	no_bioreplicate	1673	614	~Diet * Duration + (1 | Mixture) + (1 | Run)	614
+fraction_run_mixed	no_random	1059	485	~Diet * Duration	485
+fraction_run_naive	absent_factor_level	150	0	NA	NA
+fraction_run_naive	full	4683	3949	~Diet * Duration	3949
+mixture_mixed	absent_factor_level	150	0	NA	NA
+mixture_mixed	full	4683	3474	~Diet * Duration + (1 | Mixture)	3474
+mixture_mixed	no_random	1059	401	~Diet * Duration	401
+mixture_naive	absent_factor_level	150	0	NA	NA
+mixture_naive	full	4683	3863	~Diet * Duration	3863
+psm_mixed	absent_factor_level	150	0	NA	NA
+psm_mixed	full	4683	2378	~Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | Run:Channel) +     (1 | Run:ionID) + (1 | BioReplicate)	2378
+psm_mixed	ion_only	907	46	~Diet * Duration + (1 | Run:ionID)	46
+psm_mixed	no_mixture	1059	152	~Diet * Duration + (1 | Run) + (1 | Run:ionID)	152
+psm_mixed	no_run_channel	2155	602	~Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | Run:ionID) +     (1 | BioReplicate)	602
+psm_mixed	no_run_channel_no_bioreplicate	1553	494	~Diet * Duration + (1 | Mixture) + (1 | Run) + (1 | Run:ionID)	494
