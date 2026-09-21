@@ -64,6 +64,18 @@ collect_results <- function(se, L, model_col = "msqrobModels", contrast_labels =
 
 ## ---- Fitting -------------------------------------------------------------
 
+## robustSummary fails on a feature matrix in which one row has no
+## values at all (its feature factor then has a single level). After
+## reference or out-of-scope channels are removed, an ion whose only
+## values sat in those channels is exactly that. The summarised assay
+## that msqrobAggregate produces as a by-product uses this wrapper,
+## which drops all-missing rows first.
+robust_summary_safe <- function(x, ...) {
+    keep <- rowSums(!is.na(x)) > 0
+    if (!any(keep)) return(setNames(rep(NA_real_, ncol(x)), colnames(x)))
+    MsCoreUtils::robustSummary(x[keep, , drop = FALSE], ...)
+}
+
 ## Protein-level model on a summarised assay. Returns results and the
 ## wall clock of the fit alone.
 fit_protein_level <- function(qf, i, formula, hypotheses, params, robust = TRUE, ridge = FALSE,
@@ -86,7 +98,7 @@ fit_psm_level <- function(qf, i, formula, fcol, hypotheses, params, robust = TRU
     t0 <- Sys.time()
     qf <- msqrobAggregate(qf, i = i, fcol = fcol, formula = formula, robust = robust, ridge = ridge,
                           name = name, modelColumnName = "msqrobModels",
-                          aggregateFun = MsCoreUtils::robustSummary)
+                          aggregateFun = robust_summary_safe)
     fit_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     qf <- hypothesisTest(qf, i = name, contrast = L, modelColumn = "msqrobModels", overwrite = TRUE)
     res <- collect_results(qf[[name]], L, "msqrobModels", contrast_labels)
@@ -243,7 +255,7 @@ fit_tiered <- function(qf, i, tiers, hypotheses, params, robust = TRUE, ridge = 
         if (psm_level) {
             obj <- msqrobAggregate(obj, i = i, fcol = fcol, formula = formula, robust = robust, ridge = ridge,
                                    name = set_name, modelColumnName = "msqrobModels",
-                                   aggregateFun = MsCoreUtils::robustSummary)
+                                   aggregateFun = robust_summary_safe)
         } else {
             obj <- msqrob(obj, i = i, formula = formula, robust = robust, ridge = ridge,
                           modelColumnName = "msqrobModels", overwrite = TRUE)
