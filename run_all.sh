@@ -44,7 +44,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 FROM_NUM="${FROM:0:2}"
-runs_from() { [[ "$1" -ge "$FROM_NUM" ]]; }
+# Base 10 explicitly: bash reads "08" and "09" as invalid octal numbers.
+runs_from() { [[ $((10#$1)) -ge $((10#$FROM_NUM)) ]]; }
 
 mkdir -p "$ROOT/logs" "$ROOT/results" "$ROOT/figures" "$ROOT/data"
 T_ALL=$(date +%s)
