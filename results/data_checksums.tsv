@@ -1,0 +1,7 @@
+dataset	file	source	size_bytes	md5	md5_source	status	retrieved
+spikein1	spikein1_psms.txt	zenodo:14767905	238789699	ffdfe99d667017a76409648ed7ad1cdb	record	verified	2026-09-21T23:33:34+0800
+spikein1	spikein1_annotations.csv	zenodo:14767905	12981	06ae01ad1163ee7459a686110d951184	record	verified	2026-09-21T23:33:34+0800
+mouse	mouse_annotations.csv	zenodo:14767905	47061	b0aaaf766ee0d5885ee6a349639859a3	record	verified	2026-09-21T23:33:34+0800
+mouse	mouse_psms.txt	zenodo:14767905	80938182	660204e06b1fd58524edd4b269ce1b00	record	verified	2026-09-21T23:33:34+0800
+spikein1_ms2	spikein1_ms2_psms.txt	massive:MSV000084266	301424318	7e905d38b464087073c5793a40c5ca98	observed at first retrieval	verified	2026-09-21T23:37:20+0800
+spikein1_ms2	spikein1_ms2_annotations.csv	massive:MSV000084266	11016	9db8a3809473bf12572b6aadaf036fbf	observed at first retrieval	verified	2026-09-21T23:37:21+0800

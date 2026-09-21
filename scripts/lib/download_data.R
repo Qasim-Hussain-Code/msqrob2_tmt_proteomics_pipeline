@@ -43,6 +43,18 @@ bfc <- BiocFileCache(file.path(data_dir, ".bfc"), ask = FALSE)
 
 md5 <- function(path) unname(tools::md5sum(path))
 
+## Newline count without reading the file into memory.
+count_lines <- function(path) {
+    con <- file(path, "rb"); on.exit(close(con))
+    n <- 0L
+    repeat {
+        chunk <- readBin(con, "raw", 8e6)
+        if (!length(chunk)) break
+        n <- n + sum(chunk == as.raw(10L))
+    }
+    n
+}
+
 fetch_json <- function(url) {
     h <- new_handle(followlocation = TRUE, useragent = "msqrob2_tmt_proteomics_pipeline/02_download")
     r <- curl_fetch_memory(url, handle = h)
@@ -60,9 +72,10 @@ cached_download <- function(rname, url, expected_size = NA, expected_md5 = NA) {
             ok_size <- is.na(expected_size) || file.size(path) == expected_size
             obs <- md5(path)
             ok_md5 <- is.na(expected_md5) || identical(obs, expected_md5)
+            if (!ok_size && !is.na(expected_size) && expected_size - file.size(path) == count_lines(path)) ok_size <- TRUE
             if (ok_size && ok_md5) {
                 message("cached and verified: ", rname)
-                return(list(path = path, md5 = obs, size = file.size(path), fresh = FALSE))
+                return(list(path = path, md5 = obs, size = file.size(path), fresh = FALSE, size_note = ""))
             }
             message("cached copy of ", rname, " fails verification; re-downloading")
         }
@@ -78,9 +91,21 @@ cached_download <- function(rname, url, expected_size = NA, expected_md5 = NA) {
                    error = function(e) { message("download failed: ", conditionMessage(e)); FALSE })
     if (!ok) { bfcremove(bfc, names(path)); stop("download failed for ", rname) }
     size <- file.size(path)
+    size_note <- ""
     if (!is.na(expected_size) && size != expected_size) {
-        bfcremove(bfc, names(path))
-        stop(sprintf("size mismatch for %s: expected %d bytes, got %d", rname, expected_size, size))
+        ## The MassIVE download endpoint serves text files with LF line
+        ## endings while its listing reports the CRLF size on disk. The
+        ## shortfall then equals the line count exactly, which is the
+        ## only discrepancy accepted here; anything else is treated as a
+        ## truncated or altered file.
+        n_lines <- count_lines(path)
+        if (expected_size - size == n_lines) {
+            size_note <- sprintf("listing size %d is the CRLF size; served file has LF endings (%d lines)", expected_size, n_lines)
+            message(size_note)
+        } else {
+            bfcremove(bfc, names(path))
+            stop(sprintf("size mismatch for %s: expected %d bytes, got %d (%d lines)", rname, expected_size, size, n_lines))
+        }
     }
     obs <- md5(path)
     if (!is.na(expected_md5) && !identical(obs, expected_md5)) {
@@ -88,7 +113,7 @@ cached_download <- function(rname, url, expected_size = NA, expected_md5 = NA) {
         stop(sprintf("md5 mismatch for %s: expected %s, got %s. Refusing to analyse an unverified file.",
                      rname, expected_md5, obs))
     }
-    list(path = unname(path), md5 = obs, size = size, fresh = TRUE)
+    list(path = unname(path), md5 = obs, size = size, fresh = TRUE, size_note = size_note)
 }
 
 ## Expose the file under data/<name>. A hard link costs no disk; a copy
@@ -111,7 +136,8 @@ add_row <- function(dataset, file, src, res, url, exp_size, exp_md5, note = "") 
         source = src, url = url,
         size_expected = exp_size, size_observed = res$size,
         md5_expected = ifelse(is.na(exp_md5), "", exp_md5), md5_observed = res$md5,
-        status = "verified", retrieved = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z"), note = note)
+        status = "verified", retrieved = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z"),
+        note = trimws(paste(note, res$size_note, sep = if (nzchar(res$size_note)) "; " else "")))
 }
 
 ## ---- Zenodo -------------------------------------------------------------
