@@ -251,13 +251,33 @@ fit_tiered <- function(qf, i, tiers, hypotheses, params, robust = TRUE, ridge = 
         obj
     }
     set <- if (psm_level) name else i
+    ## msqrob2 builds the fixed-effect model matrix before its own error
+    ## guard, so a protein whose observed channels cover a single level
+    ## of a factor (all high fat, say) stops the whole call with R's
+    ## "contrasts can be applied only to factors with 2 or more levels".
+    ## Such proteins cannot support the fixed effects under any random
+    ## structure; they are screened out here and reported as fitError.
+    se0 <- getWithColData(qf, i)
+    fixed_vars <- intersect(all.vars(nobars(tiers[[1]])), colnames(colData(se0)))
+    groups0 <- if (psm_level) rowData(se0)[[fcol]] else rownames(se0)
+    obs <- !is.na(assay(se0))
+    cd0 <- as.data.frame(colData(se0))
+    level_ok <- vapply(split(seq_len(nrow(obs)), groups0), function(rows) {
+        cols <- colSums(obs[rows, , drop = FALSE]) > 0
+        all(vapply(fixed_vars, function(v) length(unique(cd0[[v]][cols])) >= 2, logical(1)))
+    }, logical(1))
+    absent <- names(level_ok)[!level_ok]
+    if (length(absent)) {
+        keep_rows <- !groups0 %in% absent
+        qf <- qf[keep_rows, , i]
+    }
     qf <- fit_one(qf, tiers[[1]], set)
     models <- as.list(rowData(qf[[set]])[["msqrobModels"]])
     names(models) <- rownames(qf[[set]])
     is_err <- function(ms) vapply(ms, function(m) m@type == "fitError", logical(1))
     tier <- setNames(rep(names(tiers)[1], length(models)), names(models))
     tier[is_err(models)] <- "fitError"
-    tier_log <- data.table(tier = names(tiers)[1], attempted = length(models), fitted = sum(!is_err(models)))
+    tier_log <- data.table(tier = names(tiers)[1], attempted = length(models) + length(absent), fitted = sum(!is_err(models)))
     ## msqrob2 moderates the variance inside every call with
     ## limma::squeezeVar, which errors when a subset's variances are
     ## degenerate (a tier where almost nothing fits). A tier is therefore
@@ -305,7 +325,13 @@ fit_tiered <- function(qf, i, tiers, hypotheses, params, robust = TRUE, ridge = 
     qf <- hypothesisTest(qf, i = set, contrast = L, modelColumn = "msqrobModels", overwrite = TRUE)
     res <- collect_results(qf[[set]], L, "msqrobModels", contrast_labels)
     res[, fit_tier := tier[protein]]
+    if (length(absent)) {
+        res <- rbind(res, CJ(protein = absent, contrast = res[, unique(contrast)])[
+            , `:=`(logFC = NA_real_, se = NA_real_, df = NA_real_, t = NA_real_, pval = NA_real_, adjPval = NA_real_,
+                   fit_type = "fitError", df_residual = NA_real_, df_posterior = NA_real_, fit_tier = "fitError")], fill = TRUE)
+        tier_log <- rbind(tier_log, data.table(tier = "absent_factor_level", attempted = length(absent), fitted = 0L))
+    }
     tier_log[, formula := vapply(names(tiers), function(n) paste(deparse(tiers[[n]]), collapse = ""), character(1))[tier]]
-    list(results = res, fit_seconds = fit_s, n_proteins = nrow(qf[[set]]), tier_log = tier_log,
-         df_prior = hlp$df.prior, var_prior = hlp$var.prior)
+    list(results = res, fit_seconds = fit_s, n_proteins = nrow(qf[[set]]) + length(absent), tier_log = tier_log,
+         df_prior = hlp$df.prior, var_prior = hlp$var.prior, n_absent_level = length(absent))
 }
