@@ -1,0 +1,19 @@
+# Conda environment for msqrob2_tmt_proteomics_pipeline.
+# Only R itself and the command line tools come from conda. BiocManager
+# is installed from CRAN inside R because the conda-forge build of
+# r-biocmanager lagged behind R 4.6 when this was written. The
+# Bioconductor packages are installed by BiocManager from inside R
+# (scripts/lib/install_packages.R) because bioconda carries no Windows
+# builds and mixing conda R packages with BiocManager updates causes
+# version conflicts. Versions actually installed are recorded in
+# config/r_packages.tsv after installation, not pinned here.
+name: msqrob2_tmt
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - r-base>=4.6
+  - shellcheck
+  - quarto
+  - python>=3.11
+  - curl
