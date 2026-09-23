@@ -1,0 +1,16 @@
+# Language statistics. GitHub's Linguist measures bytes of tracked
+# source, and the single rendered report at results/report.html is two
+# megabytes of Quarto-generated markup against roughly two hundred
+# kilobytes of R and shell, so the repository read as ninety per cent
+# HTML. The report is a build product of scripts/09_report.qmd, not a
+# source file, so it is marked generated: Linguist skips it and GitHub
+# collapses it in diffs.
+results/report.html linguist-generated=true
+
+# The measured tables, figures and resource logs are pipeline output
+# for the same reason. None of them are a Linguist language, but
+# marking them keeps large diffs collapsed and the statistics limited
+# to the code that is actually written by hand.
+results/** linguist-generated=true
+figures/** linguist-generated=true
+logs/** linguist-generated=true
